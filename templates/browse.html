@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% set active = 'browse' %}
+{% block eyebrow %}{{ 'CONTROL CENTER' if is_admin else 'MY WORKSPACE' }} / BROWSE{% endblock %}
+{% block page_title %}Browse{% endblock %}
+{% block subhead %}Open a website here and see the access policy decide, live — as {{ username }}.{% endblock %}
+{% block content %}
+<form class="browse-bar" method="get" action="{{ url_for('browse_page') }}">
+  <span class="browse-ico">{{ icon('browse') }}</span>
+  <input name="url" value="{{ url }}" placeholder="Type a website, e.g. youtube.com" autocomplete="off" spellcheck="false" autofocus>
+  <button class="btn-primary" type="submit">Open</button>
+</form>
+<div class="browse-chips"><span>Try:</span>
+  {% for site in ['youtube.com', 'example.com', 'github.com', 'wikipedia.org'] %}<a href="{{ url_for('browse_page', url=site) }}">{{ site }}</a>{% endfor %}
+</div>
+
+{% if not result %}
+<div class="panel"><div class="empty"><div class="empty-icon">{{ icon('browse') }}</div><strong>Enter an address above</strong><span>Blocked sites show a block page. Allowed sites open as a preview (scripts are switched off).</span></div></div>
+
+{% elif result.kind == 'blocked' %}
+<div class="verdict-card blocked">
+  <div class="vc-icon">{{ icon('shield') }}</div>
+  <div class="vc-body">
+    <div class="vc-tag">ACCESS BLOCKED</div>
+    <h2>{{ result.host }} is blocked for {{ username }}</h2>
+    <p class="vc-reason">“{{ result.reason }}”</p>
+    <div class="vc-meta"><span>Rule <b>{{ result.rule.get('id', 'policy') }}</b></span>{% set who = result.rule.get('users') or ['*'] %}<span>Applies to <b>{{ 'everyone' if '*' in who else who|join(', ') }}</b></span><span>Decision <b>DENY</b></span></div>
+    {% if is_admin %}
+      <a class="btn-primary link-btn" href="{{ url_for('websites') }}">Manage this rule</a>
+    {% else %}
+      <form method="post" action="{{ url_for('create_site_request') }}" class="vc-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="domain" value="{{ result.domain }}">
+        <div class="vc-form-title">Need it for a few minutes?</div>
+        <div class="vc-row">
+          <select name="minutes" aria-label="Duration">{% for mins, label in durations.items() %}<option value="{{ mins }}" {% if mins == 5 %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+          <input name="reason" maxlength="240" placeholder="Why do you need {{ result.domain }}?" required>
+          <button class="btn-primary" type="submit">Request access</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% elif result.kind == 'page' %}
+<div class="verdict-bar allowed">
+  <span class="vb-icon">{{ icon('check') }}</span>
+  <div><b>Allowed</b> · {{ result.host }} <small>via {{ result.how }} · HTTP {{ result.status }}{% if result.truncated %} · page cut at 1.5 MB{% endif %}</small></div>
+  <span class="vb-note">Preview · scripts off · links stay inside Browse</span>
+</div>
+<div class="page-frame"><iframe title="Preview of {{ result.host }}" sandbox="allow-top-navigation-by-user-activation" referrerpolicy="no-referrer" srcdoc="{{ result.html }}"></iframe></div>
+
+{% elif result.kind == 'binary' %}
+<div class="verdict-bar allowed">
+  <span class="vb-icon">{{ icon('check') }}</span>
+  <div><b>Allowed</b> · {{ result.host }} <small>via {{ result.how }} · HTTP {{ result.status }}</small></div>
+</div>
+<div class="panel"><div class="empty"><strong>No preview for this content type</strong><span>{{ result.ctype }} can't be shown here. Use a browser window that goes through the proxy to open it.</span></div></div>
+
+{% else %}
+<div class="notice"><strong>Couldn't open that.</strong> {{ result.message }}</div>
+{% endif %}
+{% endblock %}

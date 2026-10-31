@@ -1,0 +1,238 @@
+{
+  "_comment": "Rules are checked top to bottom and the FIRST match decides. Save this file while the proxy runs and it is reloaded within a second.",
+  "name": "campus-lab",
+  "default_action": "deny",
+  "services": {
+    "web": {
+      "host": "127.0.0.1",
+      "port": 9001,
+      "inspect": "http",
+      "aliases": [
+        "web.sim",
+        "www.sim",
+        "google.test",
+        "github.test",
+        "youtube.test",
+        "instagram.test"
+      ],
+      "description": "simulated website (HTTP/1.1)"
+    },
+    "chat": {
+      "host": "127.0.0.1",
+      "port": 9002,
+      "inspect": "line",
+      "description": "multi-user chat room"
+    },
+    "files": {
+      "host": "127.0.0.1",
+      "port": 9004,
+      "inspect": "line",
+      "description": "file server: LIST, GET <name>"
+    },
+    "echo": {
+      "host": "127.0.0.1",
+      "port": 9003,
+      "inspect": "none",
+      "description": "echo, pure byte tunnel"
+    },
+    "echo-inspect": {
+      "host": "127.0.0.1",
+      "port": 9003,
+      "inspect": "line",
+      "description": "same echo service, line-inspected"
+    },
+    "bulk": {
+      "host": "127.0.0.1",
+      "port": 9005,
+      "inspect": "none",
+      "description": "bulk transfer (benchmarks)"
+    },
+    "bulk-inspect": {
+      "host": "127.0.0.1",
+      "port": 9005,
+      "inspect": "line",
+      "description": "bulk transfer, line-inspected"
+    }
+  },
+  "groups": {
+    "staff": [
+      "alice"
+    ],
+    "students": [
+      "bob",
+      "carol"
+    ]
+  },
+  "rules": [
+    {
+      "id": "R01",
+      "action": "allow",
+      "users": [
+        "@staff"
+      ],
+      "reason": "Staff have unrestricted access"
+    },
+    {
+      "id": "R02",
+      "action": "deny",
+      "src": [
+        "10.66.0.0/16"
+      ],
+      "reason": "Source network is quarantined"
+    },
+    {
+      "id": "R03",
+      "action": "deny",
+      "users": [
+        "anonymous"
+      ],
+      "services": [
+        "chat",
+        "files"
+      ],
+      "reason": "Chat and files need a client certificate (sign in)"
+    },
+    {
+      "id": "R04",
+      "action": "deny",
+      "services": [
+        "web"
+      ],
+      "paths": [
+        "/admin",
+        "/admin/*"
+      ],
+      "reason": "The admin area is staff-only"
+    },
+    {
+      "id": "R05",
+      "action": "deny",
+      "services": [
+        "web"
+      ],
+      "paths": [
+        "/social",
+        "/social/*"
+      ],
+      "schedule": {
+        "days": "mon-fri",
+        "from": "09:00",
+        "to": "17:00"
+      },
+      "reason": "Social media is blocked during working hours (Mon-Fri 09:00-17:00)"
+    },
+    {
+      "id": "R06",
+      "action": "allow",
+      "users": [
+        "@students"
+      ],
+      "reason": "Students may use all lab services"
+    },
+    {
+      "id": "R07",
+      "action": "allow",
+      "users": [
+        "anonymous"
+      ],
+      "services": [
+        "web",
+        "echo"
+      ],
+      "reason": "Guests may browse the web and use echo"
+    }
+  ],
+  "content_filters": [
+    {
+      "id": "F01",
+      "type": "keyword",
+      "patterns": [
+        "casino",
+        "gambling",
+        "betting"
+      ],
+      "action": "block",
+      "direction": "both",
+      "services": [
+        "web",
+        "chat"
+      ],
+      "reason": "Gambling content is not allowed"
+    },
+    {
+      "id": "F02",
+      "type": "regex",
+      "patterns": [
+        "\\b(?:\\d{4}[ -]?){3}\\d{4}\\b"
+      ],
+      "action": "redact",
+      "direction": "response",
+      "replacement": "[CARD REDACTED]",
+      "reason": "Payment card numbers are masked (DLP)"
+    },
+    {
+      "id": "F03",
+      "type": "keyword",
+      "patterns": [
+        "confidential"
+      ],
+      "whole_word": true,
+      "action": "block",
+      "direction": "response",
+      "services": [
+        "web",
+        "files"
+      ],
+      "except_users": [
+        "@staff"
+      ],
+      "reason": "Confidential documents are staff-only"
+    },
+    {
+      "id": "F04",
+      "type": "mime",
+      "action": "block",
+      "except_users": [
+        "@staff"
+      ],
+      "patterns": [
+        "application/x-msdownload",
+        "application/x-msdos-program",
+        "application/vnd.microsoft.portable-executable"
+      ],
+      "reason": "Executable downloads are blocked"
+    },
+    {
+      "id": "F05",
+      "type": "keyword",
+      "patterns": [
+        "idiot",
+        "stupid",
+        "loser"
+      ],
+      "whole_word": true,
+      "action": "redact",
+      "direction": "both",
+      "services": [
+        "chat"
+      ],
+      "replacement": "***",
+      "reason": "Chat profanity filter"
+    },
+    {
+      "id": "F06",
+      "type": "keyword",
+      "patterns": [
+        "password"
+      ],
+      "action": "log",
+      "direction": "request",
+      "reason": "Audit: credentials mentioned in traffic"
+    }
+  ],
+  "limits": {
+    "max_conns_per_user": 10,
+    "max_new_conns_per_window": 30,
+    "window_seconds": 10
+  }
+}

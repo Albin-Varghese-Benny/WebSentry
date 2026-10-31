@@ -1,0 +1,23 @@
+{
+  "_comment": "Listener and TLS settings (restart to apply). Access rules live in policy.json and reload live.",
+  "listen_host": "0.0.0.0",
+  "tls_port": 8443,
+  "plain_port": null,
+  "admin_host": "127.0.0.1",
+  "admin_port": 9443,
+  "admin_token": "cn-proxy-admin",
+  "cert": "certs/proxy.crt",
+  "key": "certs/proxy.key",
+  "ca": "certs/ca.crt",
+  "require_client_cert": false,
+  "policy_file": "config/policy.json",
+  "policy_poll_seconds": 1.0,
+  "access_log": "logs/access.log",
+  "max_connections": 500,
+  "handshake_timeout": 10,
+  "idle_timeout": 300,
+  "backend_timeout": 30,
+  "connect_timeout": 5,
+  "max_header_bytes": 16384,
+  "max_body_bytes": 10485760
+}

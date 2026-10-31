@@ -1,0 +1,3 @@
+# Optional - the proxy, services, clients, demo and tests need only the Python standard library.
+cryptography   # gen_certs.py: regenerate certificates (falls back to the openssl tool)
+matplotlib     # benchmark.py: draw charts (results are still written without it)

@@ -1,0 +1,13 @@
+logs/
+bench/
+__pycache__/
+*.pyc
+*.tmp
+
+certs/blockpage/
+
+.DS_Store
+venv/
+.venv/
+certs/*.key
+certs/clients/

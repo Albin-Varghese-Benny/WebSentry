@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% set active = 'grants' %}
+{% block eyebrow %}{{ 'CONTROL CENTER' if is_admin else 'MY WORKSPACE' }} / GRANTS{% endblock %}
+{% block page_title %}{{ 'Temporary grants' if is_admin else 'My temporary grants' }}{% endblock %}
+{% block subhead %}Approved permissions expire automatically{{ ' — or revoke them early.' if is_admin else '.' }}{% endblock %}
+{% block content %}
+{% set total = grants|length + site_grants|length %}
+<section class="panel grants-panel">
+  <div class="panel-heading"><div><h2>Active grants</h2><p>Counting down in real time.</p></div><span class="count-pill green-pill">{{ total }} active</span></div>
+  {% if total %}<div class="grant-list">
+    {% for g in site_grants %}<div class="grant-row"><div class="grant-symbol">{{ icon('websites') }}</div><div class="grant-main"><strong>{{ (g.user ~ ' → ') if is_admin }}{{ g.domain }}</strong><small>{{ g.reason }}</small><small class="muted">Expires {{ g.expires_label }}</small></div><div class="remaining" data-seconds="{{ g.remaining_seconds }}">{{ g.remaining_seconds // 60 }}m {{ g.remaining_seconds % 60 }}s left</div>{% if is_admin %}<form method="post" action="{{ url_for('revoke_site_grant', rule_id=g.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn-quiet" type="submit">Revoke</button></form>{% endif %}</div>{% endfor %}
+    {% for g in grants %}<div class="grant-row"><div class="grant-symbol">{{ icon('grants') }}</div><div class="grant-main"><strong>{{ (g.user ~ ' → ') if is_admin }}{{ services.get(g.service, g.service) }}</strong><small>{{ g.reason }}</small><small class="muted">Expires {{ g.expires_label }}</small></div><div class="remaining" data-seconds="{{ g.remaining_seconds }}">{{ g.remaining_seconds // 60 }}m {{ g.remaining_seconds % 60 }}s left</div>{% if is_admin %}<form method="post" action="{{ url_for('revoke_grant', grant_id=g.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn-quiet" type="submit">Revoke</button></form>{% endif %}</div>{% endfor %}
+  </div>{% else %}<div class="empty"><div class="empty-icon">◷</div><strong>No active temporary grants</strong><span>Approved requests will appear here.</span></div>{% endif %}
+</section>
+{% endblock %}

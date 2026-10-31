@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How AccessWindow blocks a packet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b1f;--bg2:#0e1233;--card:#121843;--line:#252c66;--ink:#eef0ff;--muted:#8d95c9;
+  --indigo:#7a6cff;--cyan:#34d3ff;--green:#2ee6a6;--red:#ff4d6d;--amber:#ffb84d;--violet:#c084fc;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(1100px 600px at 85% -10%,#2a1f7a 0,transparent 60%),radial-gradient(900px 600px at -10% 110%,#0a4a6e 0,transparent 55%),var(--bg);
+  background-attachment:fixed;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 24px 36px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:12px;letter-spacing:2px;font-weight:700;color:var(--cyan)}
+h1{margin:6px 0 4px;font-size:clamp(26px,4vw,40px);font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(90deg,#fff,#b9b2ff 55%,#7fe3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:0;color:var(--muted);font-size:15px;max-width:640px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font:inherit;font-weight:650;font-size:13.5px;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--line);
+  padding:10px 15px;border-radius:12px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:8px}
+.tab i{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+.tab:hover{color:#fff;border-color:#4a54b8;transform:translateY(-1px)}
+.tab.on{color:#fff;background:linear-gradient(135deg,rgba(122,108,255,.35),rgba(52,211,255,.18));border-color:#7a6cff;box-shadow:0 8px 28px rgba(122,108,255,.25)}
+.tab[data-s="A"] i{color:var(--green)}.tab[data-s="B"] i{color:var(--red)}.tab[data-s="C"] i{color:var(--amber)}.tab[data-s="D"] i{color:var(--violet)}
+.stage{position:relative;border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(18,24,67,.75),rgba(10,14,40,.85));
+  box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(122,108,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(122,108,255,.07) 1px,transparent 1px);
+  background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);pointer-events:none}
+svg{display:block;width:100%;height:auto;position:relative}
+text{font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.lbl{fill:var(--muted);font-size:13px;font-weight:600}
+.ttl{fill:#fff;font-size:16px;font-weight:750}
+.chip rect{fill:#161c52;stroke:#2f3880;stroke-width:1.2;transition:all .25s}
+.chip text{fill:#9aa3dd;font-size:12.5px;font-weight:700;text-anchor:middle;transition:fill .25s}
+.chip.active rect{fill:#2b2a8f;stroke:var(--indigo);filter:url(#glowI)}.chip.active text{fill:#fff}
+.chip.ok rect{fill:#0f3d3a;stroke:var(--green);filter:url(#glowG)}.chip.ok text{fill:#aef7de}
+.chip.bad rect{fill:#4a1230;stroke:var(--red);filter:url(#glowR)}.chip.bad text{fill:#ffc2cf}
+.row rect.bg{fill:#141a4d;stroke:#2a3280;stroke-width:1}
+.row text{font-size:12.5px;font-weight:600;fill:#c7ccf5}
+.row .tag{fill:#8d95c9}
+.row.scan rect.bg{stroke:var(--cyan);fill:#173a6e;filter:url(#glowC)}
+.row.hit-allow rect.bg{stroke:var(--green);fill:#0f4a43;filter:url(#glowG)}
+.row.hit-deny rect.bg{stroke:var(--red);fill:#53153a;filter:url(#glowR)}
+.row.dead text{fill:#6d74a8;text-decoration:line-through}
+.row.dead rect.bg{opacity:.45}
+.pill-allow{fill:var(--green)}.pill-deny{fill:var(--red)}.pill-redact{fill:var(--amber)}
+.card rect.bx{fill:#141a4d;stroke:#2f3880;stroke-width:1.4;transition:all .3s}
+.card.ok rect.bx{stroke:var(--green);fill:#0d3f40;filter:url(#glowG)}
+.card.bad rect.bx{stroke:var(--red);fill:#431133;filter:url(#glowR)}
+.card text.t{fill:#fff;font-size:15px;font-weight:750}
+.card text.s{fill:var(--muted);font-size:12px;font-weight:600}
+.verdict{font-size:17px;font-weight:800;text-anchor:middle;letter-spacing:.5px;opacity:0}
+.flow{stroke:#3a43a0;stroke-width:2;fill:none;stroke-dasharray:6 8;animation:dash 1.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.cap{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;background:rgba(18,24,67,.7);border:1px solid var(--line);border-radius:18px;padding:18px 20px;min-height:104px}
+.step{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:19px;background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#06102e;box-shadow:0 8px 24px rgba(122,108,255,.4)}
+.cap h3{margin:0 0 4px;font-size:18px;font-weight:750}
+.cap p{margin:0 0 9px;color:#b9bfe9;font-size:15px;line-height:1.55}
+.code{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--cyan);background:rgba(52,211,255,.08);border:1px solid rgba(52,211,255,.25);padding:4px 10px;border-radius:8px}
+.cap code{font-family:"JetBrains Mono",monospace;font-size:13px;color:#ffd9a0;background:rgba(255,184,77,.1);padding:1px 6px;border-radius:5px}
+.ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{font:inherit;font-weight:650;font-size:13.5px;color:#fff;background:rgba(255,255,255,.06);border:1px solid var(--line);padding:9px 15px;border-radius:11px;cursor:pointer;transition:all .15s}
+.btn:hover{background:rgba(122,108,255,.3);border-color:var(--indigo);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,#6a5cff,#3aa8ff);border:0;box-shadow:0 6px 20px rgba(90,77,245,.4)}
+select.btn{appearance:none;padding-right:12px}
+select.btn option{color:#000}
+.tog{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer;user-select:none}
+.tog input{accent-color:#7a6cff;width:16px;height:16px}
+.sp{flex:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;font-weight:600}
+.legend span{display:flex;align-items:center;gap:7px}.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+@media(max-width:700px){.cap{grid-template-columns:1fr}.wrap{padding:18px 12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">ACCESSWINDOW · PACKET JOURNEY</div>
+      <h1>How a packet gets blocked</h1>
+      <p class="sub">Follow one request from the browser through the proxy's checks. Pick a scenario — each step shows which part of the code is running.</p>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-s="A"><i></i>Allowed site</button>
+      <button class="tab" data-s="B"><i></i>Blocked site</button>
+      <button class="tab" data-s="C"><i></i>Temporary unblock</button>
+      <button class="tab" data-s="D"><i></i>Content filter</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 1200 560" role="img" aria-label="Animated diagram of a request passing through the proxy">
+      <defs>
+        <filter id="glowI" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glowG" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glowR" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glowC" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="soft" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>
+        <linearGradient id="pk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f84ff"/><stop offset="1" stop-color="#34d3ff"/></linearGradient>
+        <linearGradient id="proxyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2160"/><stop offset="1" stop-color="#101547"/></linearGradient>
+        <linearGradient id="scr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a46c9"/><stop offset="1" stop-color="#1d9bd1"/></linearGradient>
+      </defs>
+
+      <!-- links -->
+      <path class="flow" d="M214 250 H388"/>
+      <path class="flow" d="M758 250 L900 150"/>
+      <path class="flow" d="M758 250 L900 350"/>
+
+      <!-- client -->
+      <g id="client" transform="translate(30,170)">
+        <rect x="30" y="20" width="150" height="104" rx="12" fill="url(#scr)" opacity=".95"/>
+        <rect x="38" y="28" width="134" height="88" rx="7" fill="#0a1033"/>
+        <circle cx="62" cy="48" r="4" fill="#ff6b8a"/><circle cx="76" cy="48" r="4" fill="#ffc15e"/><circle cx="90" cy="48" r="4" fill="#4de0a0"/>
+        <rect x="52" y="64" width="106" height="9" rx="4.5" fill="#2a3490"/><rect x="52" y="82" width="70" height="9" rx="4.5" fill="#2a3490"/>
+        <rect x="6" y="126" width="198" height="10" rx="5" fill="#2a3490"/>
+        <text id="clientName" x="105" y="168" text-anchor="middle" class="ttl">Bob's browser</text>
+        <text id="clientSub" x="105" y="188" text-anchor="middle" class="lbl">proxy = 127.0.0.1:8080</text>
+      </g>
+
+      <!-- admin badge (scenario C) -->
+      <g id="admin" opacity="0" transform="translate(498,22)">
+        <rect width="204" height="50" rx="14" fill="#1a1560" stroke="#7a6cff" stroke-width="1.5"/>
+        <text x="102" y="21" text-anchor="middle" class="ttl" style="font-size:14px">Admin dashboard</text>
+        <text id="adminSub" x="102" y="39" text-anchor="middle" class="lbl" style="font-size:12px">:5000 · approve / revoke</text>
+      </g>
+
+      <!-- proxy -->
+      <g id="proxy">
+        <rect x="388" y="86" width="372" height="372" rx="26" fill="url(#proxyG)" stroke="#3a43a0" stroke-width="1.6"/>
+        <text id="proxyTitle" x="574" y="122" text-anchor="middle" class="ttl">AccessWindow forward proxy</text>
+        <text id="proxySub" x="574" y="142" text-anchor="middle" class="lbl">forward_proxy.py · :8080</text>
+        <g id="chips"></g>
+        <line x1="408" y1="288" x2="740" y2="288" stroke="#252c66" stroke-width="1" stroke-dasharray="3 5"/>
+        <text id="rulesHead" x="408" y="308" class="lbl" style="font-size:11.5px;letter-spacing:1.4px">RULES · TOP TO BOTTOM · FIRST MATCH WINS</text>
+        <g id="rows"></g>
+        <!-- gate -->
+        <g id="gate">
+          <rect id="gTop" x="749" y="198" width="22" height="52" rx="6" fill="#ffb84d" filter="url(#glowC)"/>
+          <rect id="gBot" x="749" y="252" width="22" height="52" rx="6" fill="#ffb84d" filter="url(#glowC)"/>
+        </g>
+        <text id="verdict" class="verdict" x="574" y="260"></text>
+      </g>
+
+      <!-- servers -->
+      <g id="card0" class="card" transform="translate(900,106)"><rect class="bx" width="270" height="88" rx="18"/><text class="t" x="22" y="38" id="c0t">github.com</text><text class="s" x="22" y="60" id="c0s">Internet server</text><text id="c0i" x="238" y="52" font-size="26" text-anchor="middle"></text></g>
+      <g id="card1" class="card" transform="translate(900,306)"><rect class="bx" width="270" height="88" rx="18"/><text class="t" x="22" y="38" id="c1t">youtube.com</text><text class="s" x="22" y="60" id="c1s">Internet server</text><text id="c1i" x="238" y="52" font-size="26" text-anchor="middle"></text></g>
+      <text x="1035" y="440" text-anchor="middle" class="lbl" id="netLbl">THE INTERNET</text>
+
+      <g id="fx"></g>
+      <g id="packets"></g>
+    </svg>
+  </div>
+
+  <div class="cap" id="cap">
+    <div class="step" id="capStep">▶</div>
+    <div><h3 id="capT">Press play</h3><p id="capP">Choose a scenario above and watch the packet travel through the proxy.</p><span class="code" id="capC">forward_proxy.py</span></div>
+  </div>
+
+  <div class="ctl">
+    <button class="btn primary" id="bPlay">⏸ Pause</button>
+    <button class="btn" id="bReplay">↺ Replay</button>
+    <select class="btn" id="speed" aria-label="Speed"><option value="0.5">0.5× speed</option><option value="1" selected>1× speed</option><option value="1.75">1.75× speed</option></select>
+    <label class="tog"><input type="checkbox" id="auto" checked> Auto-play all scenarios</label>
+    <span class="sp"></span>
+    <div class="legend"><span><b style="background:var(--indigo)"></b>packet</span><span><b style="background:var(--green)"></b>allowed</span><span><b style="background:var(--red)"></b>blocked</span><span><b style="background:var(--amber)"></b>temporary grant</span></div>
+  </div>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const $ = id => document.getElementById(id);
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+
+/* ---------- virtual clock: pause + speed apply to every animation ---------- */
+let vt = 0, speed = 1, paused = false, lastT = performance.now(), runId = 0;
+const jobs = new Set();
+class Cancel {}
+function frame(now) {
+  const dt = Math.min(50, now - lastT); lastT = now;
+  if (!paused) vt += dt * speed;
+  for (const j of [...jobs]) j(vt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+function wait(ms) {
+  const id = runId;
+  return new Promise((res, rej) => { const end = vt + ms; const j = t => { if (id !== runId) { jobs.delete(j); rej(new Cancel); } else if (t >= end) { jobs.delete(j); res(); } }; jobs.add(j); });
+}
+function tween(ms, fn, e = ease) {
+  const id = runId, s = vt;
+  return new Promise((res, rej) => { const j = t => { if (id !== runId) { jobs.delete(j); rej(new Cancel); return; } const p = Math.min(1, (t - s) / ms); fn(e(p), p); if (p >= 1) { jobs.delete(j); res(); } }; jobs.add(j); });
+}
+function fx(ms, fn) {   // fire-and-forget visual effect (never cancels a scenario)
+  const s = vt; const j = t => { const p = Math.min(1, (t - s) / ms); fn(p); if (p >= 1) jobs.delete(j); }; jobs.add(j);
+}
+
+/* ---------- geometry ---------- */
+const ENTRY = [388, 250], GATE = [758, 250], CARD = [[900, 150], [900, 350]];
+const CL = { indigo: '#7a6cff', green: '#2ee6a6', red: '#ff4d6d', amber: '#ffb84d', violet: '#c084fc', cyan: '#34d3ff' };
+
+/* ---------- scene pieces ---------- */
+const chipsG = $('chips'), rowsG = $('rows'), pkG = $('packets'), fxG = $('fx');
+let chips = [], rows = [];
+
+function buildChips(labels) {
+  chipsG.innerHTML = ''; chips = [];
+  const w = 80, gap = 8, x0 = 574 - (4 * w + 3 * gap) / 2;
+  labels.forEach((t, i) => {
+    const g = el('g', { class: 'chip', transform: `translate(${x0 + i * (w + gap)},162)` }, chipsG);
+    el('rect', { width: w, height: 40, rx: 11 }, g);
+    const tx = el('text', { x: w / 2, y: 25 }, g); tx.textContent = t;
+    chips.push(g);
+  });
+}
+function chipState(i, s) { chips[i].setAttribute('class', 'chip ' + (s || '')); }
+function resetChips() { chips.forEach((c, i) => chipState(i, '')); }
+
+const SLOT_Y = i => 318 + i * 34;
+function makeRow(r, slot) {
+  const g = el('g', { class: 'row', transform: `translate(408,${SLOT_Y(slot)})` }, rowsG);
+  el('rect', { class: 'bg', width: 332, height: 28, rx: 9 }, g);
+  const pill = el('rect', { x: 8, y: 6, width: 46, height: 16, rx: 8, class: 'pill-' + r.act }, g);
+  const pt = el('text', { x: 31, y: 18, 'text-anchor': 'middle', style: 'font-size:10.5px;font-weight:800;fill:#06102e' }, g); pt.textContent = (r.label || r.act).toUpperCase();
+  const id = el('text', { x: 64, y: 19, class: 'tag mono', style: 'font-size:11px' }, g); id.textContent = r.id;
+  const tx = el('text', { x: 62 + r.id.length * 6.7 + 12, y: 19, style: 'font-size:12px' }, g); tx.textContent = r.text;
+  const extra = el('text', { x: 324, y: 19, 'text-anchor': 'end', style: 'font-size:11px;font-weight:800;fill:#ffb84d' }, g);
+  const o = { g, slot, extra, r }; return o;
+}
+function buildRows(list) { rowsG.innerHTML = ''; rows = list.map((r, i) => makeRow(r, i)); }
+function rowState(o, s) { o.g.setAttribute('class', 'row ' + (s || '')); }
+function moveRow(o, slot, ms) { const a = o.slot; o.slot = slot; return tween(ms, p => o.g.setAttribute('transform', `translate(408,${SLOT_Y(a) + (SLOT_Y(slot) - SLOT_Y(a)) * p})`)); }
+
+async function scan(matchIdx, kind) {            // highlight rows top→bottom until the matching one
+  for (let i = 0; i < rows.length; i++) {
+    if (i === matchIdx) { rowState(rows[i], 'hit-' + kind); return; }
+    rowState(rows[i], 'scan'); await wait(430); rowState(rows[i], '');
+  }
+}
+
+function card(i, s, icon) { $('card' + i).setAttribute('class', 'card ' + (s || '')); $('c' + i + 'i').textContent = icon || ''; }
+
+async function gate(open, color) {
+  const a = open ? 0 : 1, b = open ? 1 : 0;
+  $('gTop').setAttribute('fill', color || (open ? CL.green : CL.amber)); $('gBot').setAttribute('fill', color || (open ? CL.green : CL.amber));
+  await tween(380, p => { const k = a + (b - a) * p; const off = 38 * k; $('gTop').setAttribute('transform', `translate(0,${-off})`); $('gBot').setAttribute('transform', `translate(0,${off})`); });
+}
+function gateSet(open, color) { const off = open ? 38 : 0; $('gTop').setAttribute('transform', `translate(0,${-off})`); $('gBot').setAttribute('transform', `translate(0,${off})`); $('gTop').setAttribute('fill', color || CL.amber); $('gBot').setAttribute('fill', color || CL.amber); }
+
+function banner(text, color) {
+  const v = $('verdict'); v.textContent = text; v.setAttribute('fill', color);
+  v.setAttribute('x', 574); v.setAttribute('y', 262);
+  fx(1400, p => { v.style.opacity = p < .12 ? p / .12 : p > .85 ? (1 - p) / .15 : 1; v.setAttribute('y', 262 - 6 * p); });
+}
+
+/* ---------- packets & effects ---------- */
+function makePacket(label, color = CL.indigo, grad = true) {
+  const w = Math.max(70, label.length * 7.4 + 26);
+  const g = el('g', {}, pkG);
+  el('rect', { x: -w / 2, y: -15, width: w, height: 30, rx: 9, fill: color, opacity: .35, filter: 'url(#soft)' }, g);
+  const r = el('rect', { x: -w / 2, y: -15, width: w, height: 30, rx: 9, fill: grad && color === CL.indigo ? 'url(#pk)' : color, stroke: '#fff', 'stroke-opacity': .5 }, g);
+  const t = el('text', { x: 0, y: 5, 'text-anchor': 'middle', style: 'font-size:12px;font-weight:800;fill:#06102e', class: 'mono' }, g); t.textContent = label;
+  g._w = w; g._r = r; g._t = t; g._pos = [0, 0];
+  setPos(g, -100, -100);
+  return g;
+}
+function setPos(g, x, y, s = 1) { g._pos = [x, y]; g.setAttribute('transform', `translate(${x},${y}) scale(${s})`); }
+let trailAt = 0;
+const cardPt = (g, i) => [896 - g._w / 2, CARD[i][1]];      // packet's right edge touches the server card
+const entryX = g => 384 - g._w / 2;                       // packet's right edge touches the proxy wall
+function place(g, [x, y]) { setPos(g, x, y); return g; }
+async function enter(g, ms) { place(g, [150, 250]); await move(g, [entryX(g), 250], ms); trailAt = 0; }
+async function ret(g, from, ms) { place(g, from); await move(g, [170, 250], ms); }
+async function move(g, [x2, y2], ms) {
+  const [x1, y1] = g._pos;
+  await tween(ms, p => {
+    const x = x1 + (x2 - x1) * p, y = y1 + (y2 - y1) * p; setPos(g, x, y);
+    if (p - trailAt > .035 || p < trailAt) { trailAt = p; const c = el('circle', { cx: x - (x2 > x1 ? g._w / 2 : -g._w / 2), cy: y, r: 4, fill: g._r.getAttribute('fill') === 'url(#pk)' ? CL.cyan : g._r.getAttribute('fill') }, fxG); fx(500, q => { c.setAttribute('opacity', .6 * (1 - q)); c.setAttribute('r', 4 * (1 - q) + .5); if (q >= 1) c.remove(); }); }
+  });
+}
+function pulse(x, y, color, r0 = 8, r1 = 60) {
+  const c = el('circle', { cx: x, cy: y, r: r0, fill: 'none', stroke: color, 'stroke-width': 3 }, fxG);
+  fx(750, p => { c.setAttribute('r', r0 + (r1 - r0) * p); c.setAttribute('opacity', 1 - p); c.setAttribute('stroke-width', 3 * (1 - p) + .5); if (p >= 1) c.remove(); });
+}
+function shatter(g, color = CL.red) {
+  const [x, y] = g._pos; g.remove(); pulse(x, y, color, 10, 90); pulse(x, y, '#fff', 4, 50);
+  for (let i = 0; i < 18; i++) {
+    const a = Math.random() * Math.PI * 2, v = 50 + Math.random() * 130, w = 6 + Math.random() * 12, h = 4 + Math.random() * 8;
+    const r = el('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 2, fill: i % 3 ? color : '#fff' }, fxG);
+    const rot = (Math.random() - .5) * 720;
+    fx(950, p => { r.setAttribute('transform', `translate(${x + Math.cos(a) * v * p},${y + Math.sin(a) * v * p + 60 * p * p}) rotate(${rot * p})`); r.setAttribute('opacity', 1 - p); if (p >= 1) r.remove(); });
+  }
+}
+function absorb(g) { return tween(260, p => setPos(g, g._pos[0], g._pos[1], 1 - p)).then(() => g.remove()); }
+function fadeOut(g) { return tween(260, p => g.setAttribute('opacity', 1 - p)).then(() => g.remove()); }
+
+/* ---------- caption ---------- */
+function say(n, title, html, code) {
+  $('capStep').textContent = n; $('capT').textContent = title; $('capP').innerHTML = html; $('capC').textContent = code;
+}
+
+/* ---------- scenes ---------- */
+const FWD_CHIPS = ['1 · Auth', '2 · Target', '3 · Rules', '4 · Verdict'];
+function sceneBase(o) {
+  resetChips(); pkG.innerHTML = ''; fxG.innerHTML = ''; $('verdict').style.opacity = 0;
+  gateSet(false); card(0, ''); card(1, '');
+  $('admin').setAttribute('opacity', 0);
+  $('clientName').textContent = o.client || "Bob's browser";
+  $('clientSub').textContent = o.clientSub || 'proxy = 127.0.0.1:8080';
+  $('c0t').textContent = o.c0 || 'github.com'; $('c1t').textContent = o.c1 || 'youtube.com';
+  $('c0s').textContent = o.c0s || 'Internet server'; $('c1s').textContent = o.c1s || 'Internet server';
+  $('netLbl').textContent = o.net || 'THE INTERNET';
+  $('proxyTitle').textContent = o.title || 'AccessWindow forward proxy';
+  $('proxySub').textContent = o.sub || 'forward_proxy.py · :8080';
+  $('rulesHead').textContent = o.rulesHead || 'RULES · TOP TO BOTTOM · FIRST MATCH WINS';
+  buildChips(o.chips || FWD_CHIPS); buildRows(o.rows);
+}
+const DENY_YT = { act: 'deny', id: 'REAL-430D8776', text: '* → youtube.com' };
+const DEF_ALLOW = { act: 'allow', id: 'default', text: 'everything else' };
+
+async function inspectPipeline(host, matchIdx, kind, steps) {      // chips 1-3 shared by scenarios A-C
+  chipState(0, 'active'); say(2, 'Proxy asks: who are you?', steps[0], 'forward_proxy.py · Handler.authenticate()'); await wait(1500);
+  chipState(0, 'ok'); chipState(1, 'active'); say(3, 'Read the destination', steps[1], 'forward_proxy.py · Handler.handle()'); await wait(1500);
+  chipState(1, 'ok'); chipState(2, 'active'); say(4, 'Match the rules — first match wins', steps[2], 'forward_proxy.py · match_rule(host, user)'); await wait(500);
+  await scan(matchIdx, kind); await wait(700);
+  chipState(2, kind === 'allow' ? 'ok' : 'bad');
+}
+
+async function sA() {
+  sceneBase({ rows: [DENY_YT, DEF_ALLOW] });
+  const p = makePacket('CONNECT github.com:443');
+  say(1, "Bob opens github.com", "The browser is set to use the proxy, so instead of going straight to the internet it sends a <code>CONNECT github.com:443</code> request to <code>127.0.0.1:8080</code>.", 'macOS → Wi-Fi → Proxies → 127.0.0.1:8080');
+  await enter(p, 1500);
+  await inspectPipeline('github.com', 1, 'allow', [
+    "Every request must carry <code>Proxy-Authorization: Basic …</code>. The proxy decodes it and checks the username/password. Missing or wrong → <code>407</code>.",
+    "For <code>CONNECT</code> the target is <code>host:port</code>. The proxy splits it into <b>github.com</b> and <b>443</b>.",
+    "<code>github.com</code> does not equal <code>youtube.com</code> and isn't a subdomain of it, so the deny rule doesn't match. No rule matches → the <b>default action</b> (<code>allow</code>) applies."]);
+  chipState(3, 'active'); banner('ALLOW', CL.green); say(5, 'Verdict: allow', "<code>match_rule</code> returned <code>allow</code>. The event is written to <code>logs/real_proxy_access.jsonl</code> and the gate opens.", 'forward_proxy.py · log_event(…, "allow")');
+  await gate(true); chipState(3, 'ok'); pulse(...GATE, CL.green);
+  await move(p, GATE, 900); card(0, 'ok', '✓');
+  say(6, 'Tunnel established', "The proxy opens a socket to <code>github.com:443</code> and answers <code>200 Connection Established</code>. From now on <code>tunnel()</code> just copies bytes both ways. HTTPS stays encrypted — the proxy only ever saw the <b>hostname</b>.", 'forward_proxy.py · tunnel(upstream)');
+  await move(p, cardPt(p, 0), 900); pulse(...CARD[0], CL.green); await absorb(p);
+  const back = makePacket('200 · encrypted data', CL.green); await ret(back, cardPt(back, 0), 1700); await absorb(back);
+  await gate(false); await wait(1600);
+}
+
+async function sB() {
+  sceneBase({ rows: [DENY_YT, DEF_ALLOW] });
+  const p = makePacket('CONNECT youtube.com:443');
+  say(1, 'Bob opens youtube.com', "Same journey, different destination: the browser sends <code>CONNECT youtube.com:443</code> to the proxy.", 'macOS → Wi-Fi → Proxies → 127.0.0.1:8080');
+  await enter(p, 1500);
+  await inspectPipeline('youtube.com', 0, 'deny', [
+    "Bob's credentials are valid, so the proxy now knows the <b>user</b> is <code>bob</code>. Rules can target one user or <code>*</code> (everyone).",
+    "Target parsed: <b>youtube.com</b> : 443. (Only the hostname is visible — HTTPS payloads are not decrypted.)",
+    "Rule <code>REAL-430D8776</code> says <b>deny · everyone · youtube.com</b>. A rule matches when <code>host == domain</code> or <code>host.endswith('.' + domain)</code>, so <code>www.youtube.com</code> is blocked too. <b>First match wins</b> — the scan stops here."]);
+  chipState(3, 'active'); banner('403 FORBIDDEN', CL.red); card(1, 'bad', '🔒');
+  say(5, 'Verdict: deny', "<code>decision != 'allow'</code> → the proxy logs a <b>deny</b> event (shown in the dashboard's blocked-site alerts) and never opens a connection to youtube.com.", 'forward_proxy.py · log_event(…, "deny")');
+  await wait(700); shatter(p, CL.red); gateSet(false, CL.red); chipState(3, 'bad');
+  await wait(900);
+  say(6, 'The client gets a 403 page', "The proxy replies <code>HTTP/1.1 403 Forbidden</code> with the rule's reason and a hint to request temporary access. The packet never left the building.", 'forward_proxy.py · send(… b"HTTP/1.1 403 Forbidden" …)');
+  const back = makePacket('403 · blocked', CL.red); await ret(back, [340, 250], 1500); pulse(170, 250, CL.red); await absorb(back);
+  await wait(1700);
+}
+
+async function sC() {
+  sceneBase({ rows: [DENY_YT, DEF_ALLOW] });
+  say(1, 'First, the site is blocked', "Bob tries <code>youtube.com</code> — exactly like the previous scenario, the deny rule matches and the packet is dropped.", 'forward_proxy.py · match_rule()');
+  let p = makePacket('CONNECT youtube.com:443'); await enter(p, 1000);
+  chipState(0, 'ok'); chipState(1, 'ok'); chipState(2, 'active'); await scan(0, 'deny'); chipState(2, 'bad'); banner('403 FORBIDDEN', CL.red); card(1, 'bad', '🔒');
+  await wait(500); shatter(p, CL.red); await wait(800); rowState(rows[0], ''); resetChips(); card(1, '');
+
+  say(2, 'Bob asks for a few minutes', "On his dashboard Bob picks <code>youtube.com</code>, <b>5 minutes</b> and a reason. That creates a pending request — it changes nothing yet; Bob cannot approve his own request.", 'app.py · create_site_request()');
+  $('admin').setAttribute('opacity', 1); pulse(600, 47, CL.indigo, 10, 70);
+  const rq = makePacket('request: youtube.com · 5 min', CL.violet); place(rq, [150, 215]); await move(rq, [600, 47], 1700); pulse(600, 47, CL.violet); await absorb(rq);
+
+  say(3, 'The admin approves', "The administrator reviews the request and clicks <b>Approve</b>. The server inserts a new <code>allow</code> rule <b>at the top</b> of <code>real_website_policy.json</code> for <b>bob + youtube.com</b>, with an <code>expires_at</code> timestamp.", 'app.py · decide_request() → policy["rules"].insert(0, {…})');
+  $('adminSub').textContent = '✓ approved for bob · 5 min';
+  await wait(900);
+  const tmp = makeRow({ act: 'allow', id: 'REAL-9F2A', text: 'bob → youtube.com' }, 0);
+  tmp.g.setAttribute('opacity', 0);
+  await Promise.all([moveRow(rows[0], 1, 600), moveRow(rows[1], 2, 600), tween(600, p => tmp.g.setAttribute('opacity', p))]);
+  rows.unshift(tmp); pulse(574, SLOT_Y(0) + 14, CL.amber, 10, 90); tmp.extra.textContent = '⏱ 5:00'; tmp.extra.setAttribute('fill', CL.amber);
+  $('adminSub').textContent = ':5000 · approve / revoke'; $('admin').setAttribute('opacity', .55);
+
+  say(4, 'Bob tries again — now it passes', "<code>match_rule</code> walks the list again. The new rule is first, it matches (<code>bob</code> + <code>youtube.com</code>, not expired) and says <b>allow</b>. The older deny rule below is never even reached.", 'forward_proxy.py · match_rule() · rule_expired()');
+  p = makePacket('CONNECT youtube.com:443'); await enter(p, 1200);
+  chipState(0, 'ok'); chipState(1, 'ok'); chipState(2, 'active'); await scan(0, 'allow'); await wait(500);
+  chipState(2, 'ok'); chipState(3, 'ok'); banner('ALLOW · 5 min', CL.amber); await gate(true, CL.amber);
+  await move(p, GATE, 700); card(1, 'ok', '✓'); await move(p, cardPt(p, 1), 800); pulse(...CARD[1], CL.green); await absorb(p);
+  await wait(500);
+
+  say(5, 'The clock runs out', "Every rule can carry an <code>expires_at</code>. <code>rule_expired()</code> compares it with the current time on <b>every request</b>, and an open tunnel is also cut off at the deadline. No cleanup job is needed for the block to return.", 'forward_proxy.py · rule_expired() / tunnel(deadline)');
+  await tween(3600, q => { const s = Math.round(300 * (1 - q)); tmp.extra.textContent = '⏱ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, q => q);
+  tmp.extra.textContent = 'EXPIRED'; tmp.extra.setAttribute('fill', CL.red); rowState(tmp, 'dead'); pulse(574, SLOT_Y(0) + 14, CL.red, 10, 80);
+  await gate(false, CL.amber); card(1, ''); await wait(900);
+
+  say(6, 'Blocked again, automatically', "The expired rule is skipped, so the scan falls through to the deny rule and Bob is blocked again. The dashboard later deletes the dead rule from the file (<code>purge_expired_real_rules</code>).", 'app.py · purge_expired_real_rules()');
+  p = makePacket('CONNECT youtube.com:443'); await enter(p, 1000);
+  chipState(0, 'ok'); chipState(1, 'ok'); chipState(2, 'active');
+  rowState(rows[0], 'dead'); rowState(rows[1], 'scan'); await wait(700); rowState(rows[1], 'hit-deny'); await wait(500);
+  chipState(2, 'bad'); chipState(3, 'bad'); banner('403 FORBIDDEN', CL.red); card(1, 'bad', '🔒'); await wait(500); shatter(p, CL.red);
+  await wait(2000);
+}
+
+async function sD() {
+  sceneBase({
+    client: 'Bob · chat client', clientSub: 'TLS tunnel to :8443', c0: 'chat service', c0s: 'simulated · port 9002', c1: 'files service', c1s: 'simulated · port 9004', net: 'BACK-END SERVICES',
+    title: 'netproxy · TLS filtering proxy', sub: 'netproxy/server.py · :8443', chips: ['1 · TLS', '2 · Identity', '3 · Rules', '4 · Inspect'],
+    rulesHead: 'CONTENT FILTERS · APPLIED TO EVERY LINE',
+    rows: [{ act: 'deny', label: 'block', id: 'F01', text: 'casino · gambling · betting' }, { act: 'redact', id: 'F05', text: 'idiot · stupid · loser' }, { act: 'deny', label: 'block', id: 'F03', text: '"confidential" (non-staff)' }]
+  });
+  say(1, 'Packets, not pages', "This proxy filters the <b>content</b> of the stream. Bob is already connected: <code>R06</code> allowed students to use the chat service, the TLS handshake identified him from his client certificate, and a tunnel is open.", 'netproxy/server.py · ClientSession._handshake() / _connect()');
+  chipState(0, 'ok'); chipState(1, 'ok'); chipState(2, 'ok'); chipState(3, 'active'); gateSet(true, CL.green);
+  await wait(2200);
+
+  const send = async (label, bad) => {
+    const p = makePacket(label, CL.indigo); await enter(p, 1000);
+    say(3 + (bad ? 1 : 0), bad ? 'A packet with a banned word' : 'Inspect every line', bad
+      ? "<code>StreamInspector</code> re-assembles the TCP byte stream into lines (a keyword could be split across two packets!), then <code>inspect_bytes()</code> runs every filter's regex over the line. <code>casino</code> matches filter <b>F01 — block</b>."
+      : "Each chunk is fed to <code>StreamInspector.feed()</code>. It cuts complete lines, scans them with the compiled filter regexes, and forwards clean lines unchanged.", 'netproxy/filters.py · StreamInspector.feed() → inspect_bytes()');
+    await scan(bad ? 0 : 99, 'deny');
+    if (bad) { rowState(rows[0], 'hit-deny'); chipState(3, 'bad'); banner('BLOCKED · F01', CL.red); await wait(700); shatter(p, CL.red); gateSet(false, CL.red); return true; }
+    rows.forEach(r => rowState(r, '')); await wait(250); pulse(...GATE, CL.green);
+    await move(p, GATE, 600); await move(p, cardPt(p, 0), 700); pulse(...CARD[0], CL.green); card(0, 'ok', '✓'); await absorb(p); card(0, ''); return false;
+  };
+  await send('GET /news', false); await wait(300);
+  await send('hello team', false); await wait(300);
+  await send('lets bet at the casino', true);
+  await wait(900);
+  say(5, 'The session is terminated', "A <b>block</b> filter doesn't just drop the line: <code>_deliver()</code> calls <code>info.kill()</code>, raises <code>Terminated</code>, and the proxy tells the client why. Redact filters (F05) would instead swap the word for <code>***</code> and keep going.", 'netproxy/server.py · ClientSession._deliver() → Terminated');
+  const note = makePacket('*** terminated: filter F01 ***', CL.red); await ret(note, [350, 250], 1700); pulse(170, 250, CL.red); await absorb(note);
+  await wait(1800);
+}
+
+/* ---------- runner ---------- */
+const SC = { A: sA, B: sB, C: sC, D: sD }, ORDER = ['A', 'B', 'C', 'D'];
+let current = 'A';
+async function run(key) {
+  runId++; current = key; trailAt = 0;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.s === key));
+  const id = runId;
+  try { await SC[key](); } catch (e) { if (!(e instanceof Cancel)) console.error(e); return; }
+  if (id !== runId) return;
+  if ($('auto').checked) run(ORDER[(ORDER.indexOf(key) + 1) % ORDER.length]);
+  else { say('✓', 'Done', 'Press <b>Replay</b>, or pick another scenario.', 'packet_flow.html'); }
+}
+$('tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) { paused = false; $('bPlay').textContent = '⏸ Pause'; run(b.dataset.s); } });
+$('bReplay').onclick = () => { paused = false; $('bPlay').textContent = '⏸ Pause'; run(current); };
+$('bPlay').onclick = () => { paused = !paused; $('bPlay').textContent = paused ? '▶ Play' : '⏸ Pause'; };
+$('speed').onchange = e => speed = parseFloat(e.target.value);
+document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'SELECT') { e.preventDefault(); $('bPlay').click(); } });
+const start = location.hash.slice(1).toUpperCase();
+run(SC[start] ? start : 'A');
+// Deep link helper: packet_flow.html?at=12#C jumps 12 s into scenario C (also used for testing).
+const jump = parseFloat(new URLSearchParams(location.search).get('at') || 0);
+if (jump > 0) (async () => {
+  const was = paused; paused = true;
+  for (let t = 0; t < jump * 1000; t += 16) { vt += 16; for (const j of [...jobs]) j(vt); await new Promise(r => setTimeout(r, 0)); }
+  paused = new URLSearchParams(location.search).has('freeze') ? true : was;
+})();
+</script>
+</body>
+</html>

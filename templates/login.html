@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5fbfa">
+  <title>Welcome back · AccessWindow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+</head>
+<body class="login-body login-refresh">
+  <div class="login-orb login-orb-one" aria-hidden="true"></div>
+  <div class="login-orb login-orb-two" aria-hidden="true"></div>
+  <main class="login-shell">
+    <header class="login-brand-row">
+      <a class="login-brand" href="{{ url_for('login') }}" aria-label="AccessWindow home">
+        <span class="login-brand-symbol" aria-hidden="true">
+          <svg viewBox="0 0 36 36" role="img"><path d="M13.5 5.5 4.8 14.2a4.3 4.3 0 0 0 0 6.1l7.2 7.2a4.3 4.3 0 0 0 6.1 0l13-13-6.1-6.1-13 13-3.1-3.1 8.7-8.7z" fill="currentColor"/><path d="m18.7 4.7 5.7 5.7-5.2 5.2-5.7-5.7z" fill="#8bd8cb"/></svg>
+        </span>
+        <span class="login-brand-name">AccessWindow</span>
+      </a>
+      <span class="login-brand-caption">NETWORK ACCESS CONTROL</span>
+    </header>
+
+    <div class="login-columns">
+      <section class="login-visual" aria-label="AccessWindow secure network access">
+        <div class="visual-copy">
+          <span class="visual-kicker"><span class="visual-kicker-dot"></span> YOUR NETWORK, UNDER CONTROL</span>
+          <h2>Access that works<br>for <em>you.</em></h2>
+          <p>Request the access you need. Keep every connection visible, controlled, and accountable.</p>
+        </div>
+        <div class="visual-art" aria-hidden="true">
+          <div class="art-spark spark-a">✳</div><div class="art-spark spark-b">✳</div><div class="art-spark spark-c">✳</div>
+          <svg class="access-illustration" viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="308" cy="355" rx="232" ry="14" fill="#dcefeb"/>
+            <path d="M70 355h440M108 370h80m15 0h52m12 0h75m13 0h65" stroke="#9ed5d0" stroke-width="3" stroke-linecap="round"/>
+            <path d="M94 153c-17-46 22-88 61-64 16-47 75-34 83 3 38-14 67 21 53 53 31 20 13 65-18 66H128c-25 0-48-25-34-58Z" fill="#e9f9f6"/>
+            <path d="M454 77c20-20 54-11 58 16 31-4 45 31 24 51 18 22 3 52-25 49h-44c-36 0-49-42-25-62-15-18-7-43 12-54Z" fill="#e9f9f6"/>
+            <!-- reception desk -->
+            <path d="M146 214h333l-22 130H166Z" fill="#43b6df"/>
+            <path d="M146 214h333l-13 40H159Z" fill="#73d0e9"/>
+            <path d="M180 276h262M176 288h113m18 0h109" stroke="#b8eff8" stroke-width="3" stroke-linecap="round"/>
+            <path d="M228 202v-24c0-7 6-13 13-13h84c7 0 13 6 13 13v24" fill="#e6f7fb"/>
+            <rect x="235" y="170" width="96" height="51" rx="5" fill="#3b6e95"/>
+            <rect x="241" y="176" width="84" height="39" rx="2" fill="#c7f1f8"/>
+            <path d="M269 221h29l9 7h-48Z" fill="#e8f8fb"/>
+            <!-- standing user -->
+            <path d="M88 125c0-19 12-32 29-32 18 0 29 13 29 31v20h-58Z" fill="#40356f"/>
+            <circle cx="117" cy="132" r="26" fill="#f4a9a9"/>
+            <path d="M91 129c-6-24 7-42 28-42 19 0 32 13 29 34-11-1-20-7-26-15-7 12-17 19-31 23Z" fill="#40356f"/>
+            <path d="M90 157c-15 8-23 24-25 46l-9 83 34 6 21-76 22 68 32-9-22-88c-4-18-17-30-34-32Z" fill="#ffc65f"/>
+            <path d="m67 279-5 60c0 9 7 15 15 15h12l10-66Z" fill="#f4a9a9"/>
+            <path d="m132 277 4 62c1 9 8 14 16 14h11l-3-83Z" fill="#f4a9a9"/>
+            <path d="M75 350h27l-1 9H67c0-5 3-8 8-9Zm76 0h24c5 0 9 4 9 9h-35Z" fill="#3d326a"/>
+            <path d="M145 188c16 8 30 16 44 25l27-1c8 0 12 10 4 14l-36 6c-8 1-15-3-23-8l-25-15Z" fill="#f4a9a9"/>
+            <!-- seated support person -->
+            <path d="M351 155c-1-24 14-40 34-40 21 0 37 16 36 41l-5 23h-60Z" fill="#40356f"/>
+            <circle cx="386" cy="161" r="27" fill="#f5aeb7"/>
+            <path d="M359 158c-2-23 12-43 33-43 19 0 33 15 31 36-13-2-22-9-29-19-8 14-18 22-35 26Z" fill="#40356f"/>
+            <path d="M359 190c-19 7-28 24-29 47l-5 33h117l-7-45c-3-19-15-31-34-36l-14 19-14-19Z" fill="#fff4f2"/>
+            <path d="M359 199c-14 9-23 22-28 39l-14 28 16 10 27-29 12-26Z" fill="#f5aeb7"/>
+            <path d="M412 199c14 10 22 22 26 39l9 29-17 8-23-30-10-24Z" fill="#f5aeb7"/>
+            <!-- plant -->
+            <path d="M510 310v-78" stroke="#4c9a83" stroke-width="4" stroke-linecap="round"/>
+            <path d="M509 269c-34 0-42-24-35-39 23 1 39 17 35 39Zm2-24c-3-28 14-43 31-42 7 22-8 39-31 42Zm-2-35c-21-9-25-28-13-40 18 10 22 24 13 40Z" fill="#4aaf96"/>
+            <path d="M487 310h46l-8 41h-30Z" fill="#eabf72"/>
+            <path d="M482 309h56l-8 12h-40Z" fill="#f4d391"/>
+            <!-- floating security card -->
+            <g transform="translate(405 65)"><rect width="111" height="57" rx="12" fill="#fff" stroke="#e0f0ed"/><circle cx="27" cy="28" r="14" fill="#e5f7f2"/><path d="m21 28 4 4 8-9" fill="none" stroke="#2b9b80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M49 22h45M49 31h32M49 40h37" stroke="#b9cbc8" stroke-width="4" stroke-linecap="round"/></g>
+          </svg>
+          <div class="art-caption"><span class="art-caption-icon">✓</span><span><strong>Protected by policy</strong><small>Every request has a clear decision</small></span></div>
+        </div>
+        <div class="visual-footer"><span>ACCESS WITH CONFIDENCE</span><span>01 — SECURE WORKSPACE</span></div>
+      </section>
+
+      <section class="login-form-side">
+        <div class="login-form-inner">
+          <div class="login-welcome-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 4.7-2.8 8-7 10-4.2-2-7-5.3-7-10V6l7-3Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="eyebrow login-eyebrow">SECURE SIGN IN</div>
+          <h1>Welcome back <span class="welcome-smile">:)</span></h1>
+          <p class="login-intro">To keep connected with us, sign in using your account details.</p>
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-stack" role="status">
+                {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <form method="post" class="login-form" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="login-field" for="username">
+              <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span>
+              <span class="field-content"><span class="field-label">Username</span><input id="username" name="username" autocomplete="username" required placeholder="Enter your username" autofocus></span>
+              <span class="field-check" aria-hidden="true">✓</span>
+            </label>
+            <label class="login-field" for="password">
+              <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span>
+              <span class="field-content"><span class="field-label">Password</span><input id="password" type="password" name="password" autocomplete="current-password" required placeholder="Enter your password"></span>
+              <button class="password-toggle" type="button" id="togglePassword" aria-label="Show password">Show</button>
+            </label>
+            <div class="login-options"><span class="remember-mark">✓</span><span>Role-based secure access</span><span class="role-hint">Admin &amp; requester accounts</span></div>
+            <button class="login-submit" type="submit"><span>Sign In</span><span class="submit-arrow" aria-hidden="true">→</span></button>
+          </form>
+
+          <details class="demo-access">
+            <summary><span class="demo-summary-icon">i</span> Local demo accounts <span class="summary-chevron">⌄</span></summary>
+            <div class="demo-account-list">
+              <p><strong>Administrator</strong><code>admin</code><code>admin-demo</code></p>
+              <p><strong>Requester</strong><code>bob</code><code>bob-demo</code></p>
+              <p><strong>Alternative requester</strong><code>carol</code><code>carol-demo</code></p>
+              <small>For a local demonstration only. Change demo passwords using the environment variables described in README_ACCESSWINDOW.md.</small>
+            </div>
+          </details>
+          <div class="login-security-note"><span class="security-lock" aria-hidden="true">⌑</span> Your session is protected by AccessWindow</div>
+        </div>
+      </section>
+    </div>
+    <footer class="login-page-footer"><span>© AccessWindow · Network Access Control</span><span><i></i> Local secure demonstration</span></footer>
+  </main>
+  <script>
+    (() => {
+      const button = document.getElementById('togglePassword');
+      const password = document.getElementById('password');
+      if (!button || !password) return;
+      button.addEventListener('click', () => {
+        const showing = password.type === 'password';
+        password.type = showing ? 'text' : 'password';
+        button.textContent = showing ? 'Hide' : 'Show';
+        button.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
+      });
+    })();
+  </script>
+</body>
+</html>

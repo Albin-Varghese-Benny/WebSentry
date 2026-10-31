@@ -1,0 +1,42 @@
+{
+  "_comment": "Rules are checked top-to-bottom; first matching domain/user rule wins. HTTPS filtering is hostname-only.",
+  "default_action": "allow",
+  "rules": [
+    {
+      "id": "REAL-60C25672",
+      "action": "deny",
+      "users": [
+        "*"
+      ],
+      "domains": [
+        "x.com"
+      ],
+      "reason": "no tweeting or twerking while working",
+      "enabled": true
+    },
+    {
+      "id": "REAL-430D8776",
+      "action": "deny",
+      "users": [
+        "*"
+      ],
+      "domains": [
+        "youtube.com"
+      ],
+      "reason": "not duiring work",
+      "enabled": true
+    },
+    {
+      "id": "REAL-A811BE29",
+      "action": "deny",
+      "users": [
+        "*"
+      ],
+      "domains": [
+        "youtube.com"
+      ],
+      "reason": "not to be used during work",
+      "enabled": true
+    }
+  ]
+}

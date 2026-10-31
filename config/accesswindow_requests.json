@@ -1,0 +1,51 @@
+{
+  "requests": [],
+  "history": [
+    {
+      "time": 1793212828.7514749,
+      "event": "Real website policy added",
+      "detail": "* \u00b7 youtube.com \u00b7 DENY \u00b7 not to be used during work",
+      "rule_id": "REAL-A811BE29"
+    },
+    {
+      "time": 1793213486.1035142,
+      "event": "Real website policy added",
+      "detail": "* \u00b7 youtube.com \u00b7 DENY \u00b7 not duiring work",
+      "rule_id": "REAL-430D8776"
+    },
+    {
+      "time": 1793299359.477775,
+      "event": "Temporary site access approved",
+      "detail": "bob \u00b7 youtube.com \u00b7 5 minutes",
+      "rule_id": "REAL-C770976A"
+    },
+    {
+      "time": 1793331071.103334,
+      "event": "Temporary site access approved",
+      "detail": "bob \u00b7 youtube.com \u00b7 5 minutes",
+      "rule_id": "REAL-C3F065EC"
+    },
+    {
+      "time": 1793331131.739212,
+      "event": "Temporary site access revoked",
+      "detail": "bob \u00b7 youtube.com"
+    },
+    {
+      "time": 1793332755.9395761,
+      "event": "Temporary site access approved",
+      "detail": "bob \u00b7 youtube.com \u00b7 5 minutes",
+      "rule_id": "REAL-EE3D0956"
+    },
+    {
+      "time": 1793332770.621482,
+      "event": "Temporary site access revoked",
+      "detail": "bob \u00b7 youtube.com"
+    },
+    {
+      "time": 1793333036.453365,
+      "event": "Real website policy added",
+      "detail": "* \u00b7 x.com \u00b7 DENY \u00b7 no tweeting or twerking while working",
+      "rule_id": "REAL-60C25672"
+    }
+  ]
+}

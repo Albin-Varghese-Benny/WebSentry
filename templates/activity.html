@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% set active = 'activity' %}
+{% block eyebrow %}{{ 'CONTROL CENTER' if is_admin else 'MY WORKSPACE' }} / ACTIVITY{% endblock %}
+{% block page_title %}{{ 'Activity log' if is_admin else 'My activity' }}{% endblock %}
+{% block subhead %}{{ 'Administrative decisions made in this dashboard.' if is_admin else 'Updates related to your requests.' }}{% endblock %}
+{% block content %}
+<section class="panel activity-panel">
+  <div class="panel-heading"><div><h2>Recent activity</h2><p>Newest first.</p></div><span class="count-pill">{{ history|length }} events</span></div>
+  {% if history %}<div class="activity-list">{% for event in history %}<div class="activity-row"><div class="activity-mark">{{ '✓' if 'approved' in event.event|lower else '×' if 'rejected' in event.event|lower else '↺' }}</div><div class="activity-copy"><strong>{{ event.event }}</strong><small>{{ event.detail }}</small></div><time>{{ event.time_label }}</time></div>{% endfor %}</div>{% else %}<div class="empty"><div class="empty-icon">≡</div><strong>No activity yet</strong><span>Decisions will be recorded here.</span></div>{% endif %}
+</section>
+{% endblock %}

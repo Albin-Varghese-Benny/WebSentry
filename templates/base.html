@@ -1,0 +1,51 @@
+{% from "_icons.html" import icon %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block doc_title %}{{ self.page_title() }}{% endblock %} · AccessWindow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+</head>
+<body class="app">
+{% set is_admin = role == 'admin' %}
+{% set nav = [
+  ('index', 'overview', 'Overview' if is_admin else 'My access', 0),
+  ('requests_page', 'requests', 'Access requests' if is_admin else 'My requests', requests|length),
+  ('grants_page', 'grants', 'Temporary grants' if is_admin else 'My grants', 0),
+  ('activity_page', 'activity', 'Activity log' if is_admin else 'My activity', 0),
+  ('browse_page', 'browse', 'Browse', 0),
+  ('websites', 'websites', 'Website access', 0)] %}
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">A<span class="status-light {{ 'ok' if status.online else 'bad' }}" role="img" tabindex="0" data-label="{{ 'Proxy connected' if status.online else 'Proxy offline' }}" aria-label="{{ 'Proxy connected' if status.online else 'Proxy offline' }}"></span></div><div><strong>AccessWindow</strong><small>NETWORK ACCESS CONTROL</small></div></div>
+  <div class="nav-label">{{ 'WORKSPACE' if is_admin else 'MY WORKSPACE' }}</div>
+  <nav>
+    {% for endpoint, key, label, badge in nav %}<a class="nav-item {{ 'active' if active == key }}" href="{{ url_for(endpoint) }}" {% if active == key %}aria-current="page"{% endif %}>{{ icon(key) }}<span class="nav-text">{{ label }}</span>{% if badge %}<b>{{ badge }}</b>{% endif %}</a>{% endfor %}
+  </nav>
+  <div class="user-menu" id="user-menu">
+    <div class="user-pop" role="menu" aria-label="Account">
+      <div class="user-pop-head"><div class="avatar big">{{ username[:2]|upper }}</div><div><small>Signed in as</small><strong>{{ username }}</strong><span class="role-badge">{{ 'Administrator' if is_admin else 'Requester' }}</span></div></div>
+      <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="user-pop-item" type="submit" role="menuitem">{{ icon('logout') }}<span>Sign out</span></button></form>
+    </div>
+    <button class="user-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu">
+      <span class="avatar">{{ username[:2]|upper }}</span>
+      <span class="user-meta"><strong>{{ username }}</strong><small>{{ 'Administrator' if is_admin else 'Requester' }}</small></span>
+      {{ icon('chevron') }}
+    </button>
+  </div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div><div class="eyebrow">{% block eyebrow %}{% endblock %}</div><h1>{% block page_title %}{% endblock %}</h1><p class="subhead">{% block subhead %}{% endblock %}</p></div>
+    <div class="top-right"><span class="proxy-pill {{ 'pill-ok' if status.online else 'pill-bad' }}" title="{{ status.error if not status.online else status.stats }}"><span class="live-dot {{ 'online' if status.online else 'offline' }}"></span>{{ 'Proxy connected' if status.online else 'Proxy offline' }}</span></div>
+  </header>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  {% if not status.online and active != 'websites' %}<div class="notice"><strong>Proxy not connected.</strong> Start <code>proxy.py</code> (and the simulated services), then refresh. {{ status.error }}</div>{% endif %}
+  {% block content %}{% endblock %}
+  <footer>AccessWindow <span>Local demonstration · 127.0.0.1</span></footer>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

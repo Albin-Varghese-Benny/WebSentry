@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% set active = 'requests' %}
+{% block eyebrow %}{{ 'CONTROL CENTER' if is_admin else 'MY WORKSPACE' }} / REQUESTS{% endblock %}
+{% block page_title %}{{ 'Access requests' if is_admin else 'My requests' }}{% endblock %}
+{% block subhead %}{{ 'Approve access only for the time needed.' if is_admin else 'Submit a request and track its status.' }}{% endblock %}
+{% block content %}
+<section class="{{ 'content-grid' if not is_admin }}">
+  <div class="panel request-panel">
+    <div class="panel-heading"><div><h2>{{ 'Pending requests' if is_admin else 'My pending requests' }}</h2><p>{{ 'Requests from signed-in users.' if is_admin else 'Only requests submitted by ' ~ username ~ ' appear here.' }}</p></div><span class="count-pill">{{ requests|length }} pending</span></div>
+    {% if requests %}<div class="table-wrap"><table><thead><tr><th>{{ 'USER / ' if is_admin }}TARGET</th><th>REASON</th><th>DURATION</th><th>{{ 'ACTION' if is_admin else 'STATUS' }}</th></tr></thead><tbody>
+    {% for item in requests %}<tr><td>{% if is_admin %}<strong>{{ item.user }}</strong><small>{{ ('Website: ' ~ item.domain) if item.domain else services.get(item.service, item.service) }}</small>{% else %}<strong>{{ item.domain or services.get(item.service, item.service) }}</strong>{% endif %}<small class="muted">{{ item.created_label }}</small></td><td class="reason">{{ item.reason }}</td><td><span class="duration-pill">{{ item.minutes }} min</span></td>
+    <td>{% if is_admin %}<div class="actions"><form method="post" action="{{ url_for('decide_request', request_id=item.id, decision='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn-primary" type="submit" {% if not status.online and not item.domain %}disabled{% endif %}>Approve</button></form><form method="post" action="{{ url_for('decide_request', request_id=item.id, decision='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn-quiet" type="submit">Reject</button></form></div>{% else %}<span class="duration-pill">Pending</span>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty"><div class="empty-icon">✓</div><strong>{{ "You're all caught up" if is_admin else 'No pending requests' }}</strong><span>{{ 'No pending access requests.' if is_admin else 'Submit a request if you need temporary access.' }}</span></div>{% endif %}
+  </div>
+  {% if not is_admin %}
+  <div>
+    <div class="panel create-panel" id="site-access"><div class="panel-heading"><div><h2>Unblock a website</h2><p>A few minutes of access to a site that is blocked for you.</p></div><span class="outline-icon">{{ icon('websites') }}</span></div>
+    {% if blocked_sites %}<form method="post" action="{{ url_for('create_site_request') }}" class="request-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="domain">Blocked website</label><select id="domain" name="domain" required>{% for d in blocked_sites %}<option value="{{ d }}" {% if d == preselect %}selected{% endif %}>{{ d }}</option>{% endfor %}</select><label for="site-minutes">How long?</label><select id="site-minutes" name="minutes" required>{% for mins,label in durations.items() %}<option value="{{ mins }}" {% if mins == 5 %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><label for="site-reason">Reason</label><textarea id="site-reason" name="reason" rows="2" maxlength="240" placeholder="Why do you need this site?" required {% if preselect %}autofocus{% endif %}></textarea><button class="btn-primary submit-btn" type="submit">Request access <span>→</span></button><p class="form-footnote">Access ends automatically when time is up.</p></form>
+    {% else %}<div class="empty compact"><strong>Nothing is blocked for you</strong><span>Blocked websites will appear here.</span></div>{% endif %}</div>
+    <div class="panel create-panel"><div class="panel-heading"><div><h2>Request a service</h2><p>Goes to the administrator for review.</p></div><span class="outline-icon">＋</span></div>
+    <form method="post" action="{{ url_for('create_request') }}" class="request-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="service">Service</label><select id="service" name="service" required>{% for service,label in services.items() %}<option value="{{ service }}">{{ label }} ({{ service }})</option>{% endfor %}</select><label for="minutes">Requested duration</label><select id="minutes" name="minutes" required>{% for mins,label in durations.items() %}<option value="{{ mins }}" {% if mins == 15 %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><label for="reason">Reason for access</label><textarea id="reason" name="reason" rows="3" maxlength="240" placeholder="Explain why you need access" required></textarea><button class="btn-primary submit-btn" type="submit">Submit for review <span>→</span></button><p class="form-footnote">You cannot approve your own request.</p></form></div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% set active = 'overview' %}
+{% block eyebrow %}{{ 'CONTROL CENTER' if is_admin else 'MY WORKSPACE' }} / OVERVIEW{% endblock %}
+{% block page_title %}{{ 'Network access' if is_admin else 'My access' }}{% endblock %}
+{% block subhead %}{{ 'Administrator workspace · review requests and manage temporary access.' if is_admin else 'Ask an administrator for temporary access when you need it.' }}{% endblock %}
+{% block content %}
+{% set active_total = grants|length + site_grants|length %}
+<section class="metrics">
+  <a class="metric-card metric-link" href="{{ url_for('requests_page') }}"><div class="metric-label">{{ 'PENDING REQUESTS' if is_admin else 'MY PENDING REQUESTS' }}</div><div class="metric-value">{{ requests|length }}</div><div class="metric-note">{{ 'Awaiting review' if is_admin else 'Awaiting administrator review' }}</div><div class="metric-icon amber">{{ icon('requests') }}</div></a>
+  <a class="metric-card metric-link" href="{{ url_for('grants_page') }}"><div class="metric-label">{{ 'ACTIVE GRANTS' if is_admin else 'MY ACTIVE GRANTS' }}</div><div class="metric-value">{{ active_total }}</div><div class="metric-note">Temporary permissions</div><div class="metric-icon green">{{ icon('grants') }}</div></a>
+  <div class="metric-card"><div class="metric-label">PROXY STATUS</div><div class="metric-value status-value">{{ 'Connected' if status.online else 'Offline' }}</div><div class="metric-note">{{ (status.policy or 'Admin channel available') if status.online else 'Start proxy.py first' }}</div><div class="metric-icon blue">{{ icon('websites') }}</div></div>
+</section>
+<section class="content-grid">
+  <div class="panel">
+    <div class="panel-heading"><div><h2>{{ 'Awaiting your review' if is_admin else 'Need something unblocked?' }}</h2><p>{{ 'The three oldest pending requests.' if is_admin else 'Request a service or a blocked website for a few minutes.' }}</p></div><a class="btn-quiet link-btn" href="{{ url_for('requests_page') }}">{{ 'View all' if is_admin else 'Make a request' }}</a></div>
+    {% if is_admin and requests %}<div class="grant-list">{% for item in requests[:3] %}<div class="grant-row"><div class="grant-symbol">{{ icon('requests') }}</div><div class="grant-main"><strong>{{ item.user }} <span>→</span> {{ item.domain or services.get(item.service, item.service) }}</strong><small>{{ item.reason }}</small><small class="muted">{{ item.created_label }}</small></div><span class="duration-pill">{{ item.minutes }} min</span></div>{% endfor %}</div>
+    {% elif is_admin %}<div class="empty"><div class="empty-icon">✓</div><strong>You're all caught up</strong><span>No pending access requests.</span></div>
+    {% else %}<div class="empty"><div class="empty-icon">↗</div><strong>Ask for temporary access</strong><span>Pick a blocked site or a service, say why, and an administrator will review it.</span></div>{% endif %}
+  </div>
+  <div class="panel">
+    <div class="panel-heading"><div><h2>Active now</h2><p>Access that expires on its own.</p></div><span class="count-pill green-pill">{{ active_total }} active</span></div>
+    {% if active_total %}<div class="grant-list">
+      {% for g in site_grants[:3] %}<div class="grant-row"><div class="grant-symbol">{{ icon('websites') }}</div><div class="grant-main"><strong>{{ (g.user ~ ' → ') if is_admin }}{{ g.domain }}</strong><small class="muted">Until {{ g.expires_label }}</small></div><div class="remaining" data-seconds="{{ g.remaining_seconds }}">{{ g.remaining_seconds // 60 }}m {{ g.remaining_seconds % 60 }}s left</div></div>{% endfor %}
+      {% for g in grants[:3] %}<div class="grant-row"><div class="grant-symbol">{{ icon('grants') }}</div><div class="grant-main"><strong>{{ (g.user ~ ' → ') if is_admin }}{{ services.get(g.service, g.service) }}</strong><small class="muted">Until {{ g.expires_label }}</small></div><div class="remaining" data-seconds="{{ g.remaining_seconds }}">{{ g.remaining_seconds // 60 }}m {{ g.remaining_seconds % 60 }}s left</div></div>{% endfor %}
+    </div>{% else %}<div class="empty compact"><strong>No active temporary access</strong><span>Approved requests will appear here.</span></div>{% endif %}
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><div><h2>Recent activity</h2><p>Latest decisions.</p></div><a class="btn-quiet link-btn" href="{{ url_for('activity_page') }}">Full log</a></div>
+  {% if history %}<div class="activity-list">{% for event in history[:5] %}<div class="activity-row"><div class="activity-mark">{{ '✓' if 'approved' in event.event|lower else '×' if 'rejected' in event.event|lower else '↺' }}</div><div class="activity-copy"><strong>{{ event.event }}</strong><small>{{ event.detail }}</small></div><time>{{ event.time_label }}</time></div>{% endfor %}</div>{% else %}<div class="empty compact"><span>No activity yet.</span></div>{% endif %}
+</section>
+{% endblock %}
