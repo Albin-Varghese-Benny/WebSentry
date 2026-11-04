@@ -32,6 +32,7 @@ def main():
     ap.add_argument("--plain-port", type=int, help="also listen for plaintext clients on this port")
     ap.add_argument("--admin-port", type=int, help="admin console port")
     ap.add_argument("--access-log", help="access log path (overrides the config)")
+    ap.add_argument("--sdn-socket", help="UNIX socket of the SDN controller; denied requests are reported to it")
     ap.add_argument("--require-client-cert", action="store_true", help="refuse clients without a certificate")
     ap.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     ap.add_argument("-q", "--quiet", action="store_true", help="only warnings and errors on the console")
@@ -67,7 +68,11 @@ def main():
         sys.exit(f"cannot load policy {cfg.policy_file}: {e}")
 
     # AccessWindow grants expire inside the proxy process, even if the dashboard closes.
-    server = ProxyServer(cfg, store).start()
+    server = ProxyServer(cfg, store)
+    if args.sdn_socket:
+        from netproxy.sdn import SdnNotifier
+        server.registry.hook = SdnNotifier(args.sdn_socket).emit
+    server.start()
     expiry_stop, expiry_thread = start_expiry_worker(store, ROOT / "config" / "accesswindow_state.json")
     p = store.policy
     print(f"netproxy {__version__}")

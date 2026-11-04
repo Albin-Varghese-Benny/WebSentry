@@ -17,7 +17,7 @@
   ('grants_page', 'grants', 'Temporary grants' if is_admin else 'My grants', 0),
   ('activity_page', 'activity', 'Activity log' if is_admin else 'My activity', 0),
   ('browse_page', 'browse', 'Browse', 0),
-  ('websites', 'websites', 'Website access', 0)] %}
+  ('websites', 'websites', 'Website access', 0)] + ([('network_page', 'network', 'Network (SDN)', 0)] if is_admin else []) %}
 <aside class="sidebar">
   <div class="brand"><div class="brand-mark">A<span class="status-light {{ 'ok' if status.online else 'bad' }}" role="img" tabindex="0" data-label="{{ 'Proxy connected' if status.online else 'Proxy offline' }}" aria-label="{{ 'Proxy connected' if status.online else 'Proxy offline' }}"></span></div><div><strong>AccessWindow</strong><small>NETWORK ACCESS CONTROL</small></div></div>
   <div class="nav-label">{{ 'WORKSPACE' if is_admin else 'MY WORKSPACE' }}</div>

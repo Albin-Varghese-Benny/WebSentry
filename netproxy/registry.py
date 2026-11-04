@@ -65,6 +65,7 @@ class Registry:
         self.started = time.time()
         self._log_lock = threading.Lock()
         self._log_fh = None
+        self.hook = None                              # optional callable(record), e.g. SdnNotifier.emit
         if access_log:
             os.makedirs(os.path.dirname(access_log) or ".", exist_ok=True)
             self._log_fh = open(access_log, "a", encoding="utf-8", buffering=1)
@@ -150,6 +151,11 @@ class Registry:
             self.recent_log.append(record)
             if self._log_fh:
                 self._log_fh.write(json.dumps(record) + "\n")
+        if self.hook:
+            try:
+                self.hook(record)
+            except Exception:
+                pass
 
     def close(self):
         with self._log_lock:

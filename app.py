@@ -312,6 +312,83 @@ def activity_page():
     return render_page("activity.html")
 
 
+# ---------------------------------------------------------------- Network (SDN): quarantine status and control
+# The Ryu controller of the Mininet lab (sdn_lab/) listens on a UNIX socket. This page shows what it has done and
+# lets the administrator block or release a host. Outside the lab the socket does not exist and the page says so.
+SDN_SOCK = os.environ.get("SDN_SOCK", "/tmp/websentry_sdn.sock")
+
+
+def sdn_command(line, timeout=2.0):
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(timeout)
+    try:
+        s.connect(SDN_SOCK)
+        s.sendall((line + "\n").encode())
+        data = b""
+        while not data.endswith(b"\n"):
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+    finally:
+        s.close()
+    return json.loads(data or b"{}")
+
+
+def log_history(event, detail):
+    with LOCK:
+        data = load_requests()
+        data.setdefault("history", []).append({"time": time.time(), "event": event, "detail": detail})
+        write_json(REQUESTS_PATH, data)
+
+
+@app.get("/network")
+@role_required("admin")
+def network_page():
+    sdn, error = None, ""
+    try:
+        sdn = sdn_command("STATUS")
+        for ev in sdn.get("recent", []):
+            ev["time_label"] = fmt_time(ev.get("ts", time.time()))
+            ev["detail"] = ", ".join(f"{k}={v}" for k, v in ev.items() if k not in ("ts", "event", "time_label", "detail", "flows"))
+    except (OSError, ValueError) as exc:
+        error = f"SDN controller not reachable at {SDN_SOCK} ({exc}). Start the Mininet lab: sudo python3 sdn_lab/run_demo.py --dashboard"
+    return render_page("network.html", sdn=sdn, sdn_error=error)
+
+
+@app.post("/network/block")
+@role_required("admin")
+def network_block():
+    ip = request.form.get("ip", "").strip()
+    try:
+        ipaddress.IPv4Address(ip)
+        seconds = int(request.form.get("seconds", "60"))
+        if not 5 <= seconds <= 3600:
+            raise ValueError("duration must be 5-3600 seconds")
+        reply = sdn_command(f"BLOCK {ip} {seconds}")
+        flash(reply.get("msg", "done") if reply.get("ok") else f"Controller refused: {reply.get('msg')}",
+              "success" if reply.get("ok") else "error")
+        if reply.get("ok"):
+            log_history("Host blocked in the network", f"{ip} for {seconds}s (administrator)")
+    except (ValueError, OSError) as exc:
+        flash(f"Could not block: {exc}", "error")
+    return redirect(url_for("network_page"))
+
+
+@app.post("/network/unblock/<ip>")
+@role_required("admin")
+def network_unblock(ip):
+    try:
+        ipaddress.IPv4Address(ip)
+        reply = sdn_command(f"UNBLOCK {ip}")
+        flash(reply.get("msg", "done"), "success" if reply.get("ok") else "error")
+        if reply.get("ok"):
+            log_history("Host released in the network", f"{ip} (administrator)")
+    except (ValueError, OSError) as exc:
+        flash(f"Could not unblock: {exc}", "error")
+    return redirect(url_for("network_page"))
+
+
 # ---------------------------------------------------------------- Browse: open a site inside the dashboard
 # The address is checked against the same real-domain rules the forward proxy uses (forward_proxy.match_rule),
 # for the signed-in user. Blocked -> a block page in the browser. Allowed -> a scripts-off preview of the page.

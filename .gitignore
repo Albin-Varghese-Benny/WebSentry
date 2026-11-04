@@ -11,3 +11,8 @@ venv/
 .venv/
 certs/*.key
 certs/clients/
+
+sdn_lab/generated/
+sdn_lab/charts/
+logs/mininet/
+__pycache__/

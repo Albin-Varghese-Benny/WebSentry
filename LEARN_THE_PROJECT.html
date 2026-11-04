@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AccessWindow — Learn &amp; Present</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#1d2330;--mut:#5d6677;--card:#fff;--line:#e3e0d8;--acc:#2f5bea;--acc2:#e8eeff;--ok:#1f8a4c;--okbg:#e6f5ec;--bad:#c23b3b;--badbg:#fbeaea;--warn:#a96800;--warnbg:#fff3dc;--code:#f2f0ea}
+@media (prefers-color-scheme:dark){:root{--bg:#14171f;--fg:#e8eaf0;--mut:#9aa3b5;--card:#1c202b;--line:#2f3544;--acc:#7b9cff;--acc2:#222a45;--ok:#5fd18c;--okbg:#17301f;--bad:#ff8585;--badbg:#391c1c;--warn:#ffc266;--warnbg:#3a2c10;--code:#242938}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px 80px}
+header.hero{padding:48px 0 24px;border-bottom:1px solid var(--line)}
+h1{font-size:2.1rem;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.5rem;margin:48px 0 8px;padding-top:8px;border-top:2px solid var(--line)}
+h3{font-size:1.1rem;margin:24px 0 6px}
+p{margin:8px 0}
+.sub{color:var(--mut);font-size:1.05rem}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 0}
+nav.toc a{font-size:.85rem;padding:4px 10px;border-radius:99px;background:var(--acc2);color:var(--acc);text-decoration:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+.big{font-size:1.2rem;background:var(--acc2);border-left:4px solid var(--acc);padding:14px 18px;border-radius:8px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:99px;text-transform:uppercase}
+.t-ok{background:var(--okbg);color:var(--ok)}.t-bad{background:var(--badbg);color:var(--bad)}.t-warn{background:var(--warnbg);color:var(--warn)}.t-acc{background:var(--acc2);color:var(--acc)}
+code,pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em}
+code{background:var(--code);padding:1px 5px;border-radius:4px}
+pre{background:var(--code);padding:12px 14px;border-radius:8px;overflow-x:auto;white-space:pre-wrap}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--acc2)}
+dl dt{font-weight:700;margin-top:10px}dl dd{margin:0 0 0 0;color:var(--mut)}
+ol.steps{counter-reset:s;list-style:none;padding:0}
+ol.steps li{counter-increment:s;position:relative;padding:6px 0 6px 44px;margin:4px 0}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+svg{max-width:100%;height:auto}
+svg text{fill:#111;font-family:inherit}
+svg text.out{fill:var(--fg)}
+.slide{border-left:4px solid var(--acc);padding-left:16px;margin:18px 0}
+.slide .time{font-size:.8rem;color:var(--mut)}
+.say{color:var(--mut);font-style:italic}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin-top:8px}
+/* simulator */
+.sim label{display:inline-block;margin:4px 12px 4px 0;font-size:.9rem}
+.sim select,.sim input{font:inherit;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+.sim table td.hit{background:var(--okbg);font-weight:700}
+.sim table tr.skip{opacity:.45}
+.verdict{font-size:1.1rem;font-weight:700;padding:10px 14px;border-radius:8px;margin-top:8px}
+.verdict.allow{background:var(--okbg);color:var(--ok)}.verdict.deny{background:var(--badbg);color:var(--bad)}
+button{font:inherit;padding:6px 14px;border-radius:8px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--acc)}
+@media print{
+ :root{--bg:#fff;--fg:#111;--mut:#444;--card:#fff;--line:#ccc;--acc:#2f5bea;--acc2:#eef2ff;--code:#f2f2f2;--ok:#1f8a4c;--okbg:#e6f5ec;--bad:#c23b3b;--badbg:#fbeaea;--warn:#a96800;--warnbg:#fff3dc}
+ body{font-size:11pt}.wrap{max-width:none;padding:0}nav.toc{display:none}
+ h2{break-after:avoid;break-before:page}header+section h2,h2:first-of-type{break-before:auto}
+ .card,.slide,details,table,pre,svg{break-inside:avoid}
+ details>*{display:block}details{border:1px solid var(--line)}
+ button,.noprint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="tag t-acc">Learning guide + presentation kit</span>
+  <h1>AccessWindow: a content-filtering proxy with an approval workflow</h1>
+  <p class="sub">Written for someone who has never seen this project. Read sections 1–6 to understand it, section 9 to build your talk, section 10 to survive the questions.</p>
+  <nav class="toc">
+    <a href="#s1">1 The idea</a><a href="#s2">2 Vocabulary</a><a href="#s3">3 Architecture</a><a href="#s4">4 The story</a><a href="#s5">5 Rule engine (try it)</a><a href="#s6">6 Content filters</a><a href="#s7">7 Security</a><a href="#s8">8 Limits</a><a href="#s9">9 Your talk</a><a href="#s10">10 Q&amp;A</a><a href="#s11">11 Demo</a><a href="#s12">12 Flashcards</a>
+  </nav>
+</header>
+
+<section id="s1">
+<h2>1. The idea in plain English</h2>
+<div class="big">Every connection goes through a <b>middleman (a proxy)</b>. The proxy checks an <b>ordered list of rules</b>. The <b>first rule that matches wins</b>. A web <b>dashboard</b> lets an admin edit the rules and approve people's requests for <b>temporary access</b>, which <b>expires by itself</b>.</div>
+
+<div class="card">
+<b>Analogy: the school security desk.</b><br>
+Students don't walk straight into other buildings. They go via a desk. The guard has a clipboard of rules, top to bottom: <i>"Bob may enter the Lab until 3pm"</i> / <i>"Nobody enters the Lab"</i>. The guard reads from the top and obeys the <b>first line that applies</b>. If Bob asks for access, the principal (admin) writes a new line <b>at the top</b> with an expiry time. When 3pm passes the line stops applying, and the old "Nobody enters" line takes over again. The guard never needs to be told to remove it.
+</div>
+
+<h3>What problem does it solve?</h3>
+<ul>
+<li>Block unwanted sites (e.g. YouTube) for some or all users, in one central place the user can't switch off from the browser.</li>
+<li>Let people ask for a short exception, with a reason, and let an admin approve it, without editing config files.</li>
+<li>Inspect and filter content (keywords, card numbers, executable downloads) in a lab environment.</li>
+<li>Keep an audit log of who tried to reach what.</li>
+</ul>
+
+<h3>The two things you will say most often</h3>
+<div class="grid">
+<div class="card"><b>"First match wins."</b><br>Rules are checked top to bottom. Order is the logic. That's why a temporary <i>allow</i> is inserted at position 0.</div>
+<div class="card"><b>"Expiry is enforced in the data path."</b><br>The proxy itself compares <code>expires_at</code> with the clock on every request, so even if the dashboard crashed, access would still end on time.</div>
+</div>
+</section>
+
+<section id="s2">
+<h2>2. Vocabulary you need</h2>
+<dl>
+<dt>Proxy / forward proxy</dt><dd>A server that makes requests on behalf of a client. In a <i>forward</i> proxy the client is configured to use it (this project). A <i>reverse</i> proxy sits in front of servers instead (load balancers, CDNs).</dd>
+<dt>ACL (access control list) / rule</dt><dd>An ordered list of allow/deny conditions. Here: who (user), what (domain, service, path, method), when (schedule), from where (IP range).</dd>
+<dt>Default action</dt><dd>What happens if no rule matches. <i>Default deny</i> = whitelist (safer). <i>Default allow</i> = blacklist (practical for browsing).</dd>
+<dt>HTTP <code>CONNECT</code></dt><dd>How a browser asks a proxy for an HTTPS tunnel: <code>CONNECT youtube.com:443</code>. The proxy then just copies encrypted bytes back and forth. It can only see the <b>hostname</b>, not the page or content.</dd>
+<dt>TLS / HTTPS</dt><dd>Encryption between browser and website.</dd>
+<dt>Mutual TLS (mTLS)</dt><dd>Both sides show certificates. The client certificate's Common Name (e.g. <code>bob</code>) becomes the user's identity, which can't be faked by editing a header.</dd>
+<dt>CA (certificate authority)</dt><dd>The thing that signs certificates so others trust them. <code>gen_certs.py</code> makes a project CA.</dd>
+<dt>TLS interception</dt><dd>The proxy pretends to be the website using its own CA-signed certificate. Needed here only to show a block page for HTTPS sites.</dd>
+<dt>Immutable object</dt><dd>Never modified after creation. Policy changes build a <i>new</i> Policy and swap it in, so threads never see half-edited rules.</dd>
+<dt>CSRF</dt><dd>A malicious site tricks your logged-in browser into submitting a form to the dashboard. Defence: a secret token in every form.</dd>
+<dt>SSRF</dt><dd>Tricking a server into fetching internal addresses (localhost, LAN). Relevant to the Browse page.</dd>
+<dt>Service worker</dt><dd>A script a site installs in your browser that can serve cached pages offline. It's why a blocked YouTube first looked "offline".</dd>
+</dl>
+</section>
+
+<section id="s3">
+<h2>3. Architecture: three layers</h2>
+<p>The project is really three programs that cooperate. Think <b>two proxies</b> (data plane) and <b>one dashboard</b> (control plane).</p>
+
+<svg viewBox="0 0 860 420" role="img" aria-label="Architecture diagram">
+ <defs><marker id="ar" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#2f5bea"/></marker></defs>
+ <rect x="280" y="10" width="300" height="86" rx="12" fill="#e8eeff" stroke="#2f5bea"/>
+ <text x="430" y="38" text-anchor="middle" font-weight="700" font-size="16">Layer C: Flask dashboard :5000</text>
+ <text x="430" y="60" text-anchor="middle" font-size="13">app.py · admin &amp; requester roles</text>
+ <text x="430" y="80" text-anchor="middle" font-size="13">edits rules · approves requests · logs</text>
+
+ <rect x="10" y="170" width="250" height="90" rx="12" fill="#fff3dc" stroke="#a96800"/>
+ <text x="135" y="198" text-anchor="middle" font-weight="700" font-size="15" >Layer B: forward_proxy.py :8080</text>
+ <text x="135" y="220" text-anchor="middle" font-size="13" >real websites · HTTP + CONNECT</text>
+ <text x="135" y="240" text-anchor="middle" font-size="13" >filters by hostname only</text>
+
+ <rect x="330" y="170" width="250" height="90" rx="12" fill="#e6f5ec" stroke="#1f8a4c"/>
+ <text x="455" y="198" text-anchor="middle" font-weight="700" font-size="15" >Layer A: proxy.py + netproxy/</text>
+ <text x="455" y="220" text-anchor="middle" font-size="13" >TLS :8443 · admin :9443</text>
+ <text x="455" y="240" text-anchor="middle" font-size="13" >rules + content filters + limits</text>
+
+ <rect x="10" y="330" width="250" height="60" rx="12" fill="#f2f0ea" stroke="#999"/>
+ <text x="135" y="357" text-anchor="middle" font-weight="700" font-size="14" >The real internet</text>
+ <text x="135" y="376" text-anchor="middle" font-size="12" >youtube.com, example.com…</text>
+ <rect x="330" y="330" width="250" height="60" rx="12" fill="#f2f0ea" stroke="#999"/>
+ <text x="455" y="357" text-anchor="middle" font-weight="700" font-size="14" >Simulated services (services.py)</text>
+ <text x="455" y="376" text-anchor="middle" font-size="12" >web · chat · echo · files · bulk (9001–9005)</text>
+
+ <rect x="10" y="10" width="250" height="70" rx="12" fill="#fff" stroke="#555"/>
+ <text x="135" y="38" text-anchor="middle" font-weight="700" font-size="15">Browser / client</text>
+ <text x="135" y="60" text-anchor="middle" font-size="13">proxy set to 127.0.0.1:8080</text>
+
+ <path d="M135,82 L135,168" stroke="#2f5bea" stroke-width="2" marker-end="url(#ar)"/>
+ <path d="M135,262 L135,328" stroke="#2f5bea" stroke-width="2" marker-end="url(#ar)"/>
+ <path d="M455,262 L455,328" stroke="#2f5bea" stroke-width="2" marker-end="url(#ar)"/>
+ <path d="M330,80 L240,168" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+ <path d="M470,96 L470,168" stroke="#555" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+ <text class="out" x="215" y="118" font-size="12">writes policy JSON</text>
+ <text class="out" x="480" y="135" font-size="12">admin commands (TLS+token)</text>
+</svg>
+
+<table>
+<tr><th>Layer</th><th>Filters what?</th><th>Policy file</th><th>Default</th></tr>
+<tr><td><b>A</b> netproxy (original academic proxy)</td><td>Connections to <i>simulated</i> services, and the <b>content</b> of the stream</td><td><code>config/policy.json</code></td><td>deny</td></tr>
+<tr><td><b>B</b> forward_proxy.py</td><td><b>Real</b> domains, by hostname</td><td><code>config/real_website_policy.json</code></td><td>allow</td></tr>
+<tr><td><b>C</b> app.py (Flask)</td><td>Nothing directly. It is the <b>control plane</b>.</td><td>edits both</td><td>–</td></tr>
+</table>
+<p><b>Why two proxies?</b> A is a full TLS proxy for a closed lab with identities and content inspection. B is a lightweight proxy so a normal browser can be filtered on the real web.</p>
+
+<h3>Which file does what (the 10 you should recognise)</h3>
+<table>
+<tr><th>File</th><th>One-line job</th></tr>
+<tr><td><code>forward_proxy.py</code></td><td>Layer B: reads <code>CONNECT</code>, authenticates, runs <code>match_rule()</code>, tunnels or blocks</td></tr>
+<tr><td><code>blockpage.py</code></td><td>Local CA + per-host certs to show a real "blocked" page over HTTPS</td></tr>
+<tr><td><code>app.py</code></td><td>Dashboard: login, roles, requests, approvals, Browse, website rules</td></tr>
+<tr><td><code>netproxy/policy.py</code></td><td>The rule engine: immutable <code>Policy</code>, <code>evaluate()</code>, atomic swap, file watcher</td></tr>
+<tr><td><code>netproxy/server.py</code></td><td>Layer A server: thread per client, TLS, relay and inspect</td></tr>
+<tr><td><code>netproxy/filters.py</code></td><td>Keyword/regex/MIME inspection and the stream re-assembler</td></tr>
+<tr><td><code>netproxy/httpmsg.py</code></td><td>Strict HTTP parser (anti request-smuggling)</td></tr>
+<tr><td><code>netproxy/registry.py</code></td><td>Live connection table, limits, access log, <code>revalidate()</code></td></tr>
+<tr><td><code>netproxy/control.py</code></td><td>Admin console (BLOCK, RULE, KILL, STATUS…)</td></tr>
+<tr><td><code>services.py</code></td><td>The five fake back-end servers used for the lab</td></tr>
+</table>
+<p class="sub">Roughly 9,000 lines of Python in total. The only third-party dependency for the core is the standard library; the dashboard needs Flask.</p>
+</section>
+
+<section id="s4">
+<h2>4. The story: one complete user journey</h2>
+<p>This is the heart of your demo. Learn it as a story with four acts.</p>
+
+<div class="card">
+<span class="tag t-bad">Act 1: Blocked</span>
+<ol class="steps">
+<li>Admin adds a rule on the <b>Website access</b> page: <code>deny * → youtube.com</code>.</li>
+<li>Bob opens youtube.com. The browser sends <code>CONNECT youtube.com:443</code> to the proxy on :8080.</li>
+<li>The proxy checks Bob's proxy password (<code>407</code> if wrong), then runs <code>match_rule("youtube.com","bob")</code>. The deny rule matches → <b>verdict: deny</b>. It logs the event and never opens a connection to YouTube.</li>
+<li>With <code>--block-page</code> Bob sees a real page: why it is blocked, by whom, and a <b>Request temporary access</b> button.</li>
+</ol>
+</div>
+
+<div class="card">
+<span class="tag t-warn">Act 2: Request</span>
+<ol class="steps">
+<li>Bob signs into the dashboard and submits: site = youtube.com, 5 minutes, a reason.</li>
+<li>The app only accepts sites the proxy <i>currently blocks for Bob</i> (it uses the same <code>match_rule</code> function, so the two can't disagree). Nothing changes yet. The request is <b>pending</b>.</li>
+</ol>
+</div>
+
+<div class="card">
+<span class="tag t-ok">Act 3: Approve</span>
+<ol class="steps">
+<li>Admin opens <b>Access requests</b> and clicks <b>Approve</b>. Only admins can; it's enforced on the server (<code>@role_required("admin")</code>), not just by hiding a button.</li>
+<li>A rule is inserted at <b>index 0</b>:
+<pre>{"action":"allow","users":["bob"],"domains":["youtube.com"],
+ "temporary":true,"expires_at": now + 5*60, "grant_reason":"…"}</pre></li>
+<li>Bob reloads: first match is now this <i>allow</i> → the proxy opens a tunnel. Carol is still blocked, because the rule names only Bob.</li>
+</ol>
+</div>
+
+<div class="card">
+<span class="tag t-acc">Act 4: Expire or revoke</span>
+<ol class="steps">
+<li>Five minutes pass. <code>rule_expired()</code> returns true, the proxy <b>skips</b> that rule, and the older deny matches again. No cleanup job is needed for correctness.</li>
+<li>Already-open tunnels are not forgotten: every second <code>tunnel()</code> re-runs <code>match_rule</code> and stops at the deadline. An admin <b>Revoke</b> cuts a live YouTube stream within about a second.</li>
+<li><code>purge_expired_real_rules()</code> later tidies dead rules out of the JSON file (cosmetic only).</li>
+</ol>
+</div>
+
+<div class="big">Design decision to defend: <b>where is expiry enforced?</b> In the proxy's data path, not just in a background job. Failure of the dashboard can't leave a site open.</div>
+
+<p class="noprint">An animated version of this journey is in <code>packet_flow.html</code> (same folder). Open it in a browser during your rehearsal.</p>
+</section>
+
+<section id="s5">
+<h2>5. Rule engine: try it yourself</h2>
+<p>This simulator mirrors <code>match_rule()</code> from <code>forward_proxy.py</code>. Change the user, the site and whether the temporary grant is still valid, then watch which rule wins.</p>
+
+<div class="card sim">
+ <label>User <select id="u"><option>bob</option><option>carol</option><option>admin</option></select></label>
+ <label>Site <select id="h"><option>youtube.com</option><option>www.youtube.com</option><option>rr3.googlevideo.com</option><option>notyoutube.com</option><option>example.com</option></select></label>
+ <label>Bob's 5-minute grant <select id="g"><option value="live">still valid</option><option value="expired">expired</option><option value="none">never approved</option></select></label>
+ <table id="rt"></table>
+ <div id="vd" class="verdict"></div>
+ <p class="sub" id="why"></p>
+</div>
+
+<p><b>Things to notice</b></p>
+<ul>
+<li><code>www.youtube.com</code> and <code>googlevideo.com</code> are covered by the <code>youtube.com</code> rule (subdomain match plus the <code>DOMAIN_FAMILIES</code> table).</li>
+<li><code>notyoutube.com</code> is <b>not</b> blocked. The match is <code>host == d or host.endswith("." + d)</code>, so a look-alike suffix doesn't trick it. There's a test for this.</li>
+<li>Default action is <b>allow</b> in Layer B. In Layer A it is <b>deny</b>.</li>
+</ul>
+
+<h3>The actual code (it's short)</h3>
+<pre>def match_rule(host, user):
+    host = host.lower().rstrip(".")
+    policy = read_policy()
+    for rule in policy.get("rules", []):
+        if not rule.get("enabled", True) or rule_expired(rule): continue
+        users = rule.get("users", ["*"])
+        if users and "*" not in users and user not in users: continue
+        if domain_hit(host, rule):
+            return rule.get("action", "deny"), rule      # FIRST MATCH WINS
+    return policy.get("default_action", "allow"), None</pre>
+
+<h3>Layer A's richer rules</h3>
+<p>Layer A rules can also match user groups (<code>@staff</code>), source network, service, <b>path</b> (<code>/admin/*</code>), HTTP method and a <b>time schedule</b>. The shipped sample policy:</p>
+<table>
+<tr><th>ID</th><th>Effect</th></tr>
+<tr><td>R01</td><td>Staff allow</td></tr><tr><td>R02</td><td>Quarantined network deny</td></tr>
+<tr><td>R03</td><td>Anonymous users can't use chat/files</td></tr><tr><td>R04</td><td>Deny <code>/admin</code> on web</td></tr>
+<tr><td>R05</td><td>Deny <code>/social</code> Mon–Fri 09:00–17:00</td></tr><tr><td>R06</td><td>Students allow</td></tr><tr><td>R07</td><td>Guests: web + echo only</td></tr>
+</table>
+<p><b>Two-stage evaluation:</b> at <i>connect</i> time the proxy knows user, IP, service and time. At <i>request</i> time it also knows method and path. A path rule can't be decided at connect time, so a deny is deferred and an allow admits provisionally.</p>
+<p><b>Path normalisation</b> (<code>normalize_path</code>) turns <code>/%61dmin</code>, <code>//admin</code> and <code>/x/../admin</code> into <code>/admin</code> <i>before</i> matching, and the proxy forwards the normalised path, so what was checked is exactly what is served.</p>
+<p><b>Dynamic policy:</b> <code>Policy</code> is immutable. Any change builds version+1 and swaps it atomically. A watcher polls the file each second; invalid files are rejected and the old policy stays. After each swap, <code>revalidate()</code> re-checks every open connection and kills the ones now denied.</p>
+</section>
+
+<section id="s6">
+<h2>6. Content filtering (Layer A)</h2>
+<div class="grid">
+<div class="card"><b>keyword</b><br>words, optionally whole-word, case-insensitive.<br>F01 gambling, F03 "confidential", F05 profanity, F06 "password".</div>
+<div class="card"><b>regex</b><br>patterns.<br>F02 card numbers → <code>[CARD REDACTED]</code>.</div>
+<div class="card"><b>mime</b><br>the response <code>Content-Type</code>.<br>F04 blocks Windows executables (staff exempt).</div>
+</div>
+<table>
+<tr><th>Action</th><th>Effect</th></tr>
+<tr><td><span class="tag t-bad">block</span></td><td>Request refused (<code>403</code>) or, on a stream, the session is terminated</td></tr>
+<tr><td><span class="tag t-warn">redact</span></td><td>Matched text replaced (e.g. <code>***</code>), traffic continues</td></tr>
+<tr><td><span class="tag t-acc">log</span></td><td>Recorded only (audit)</td></tr>
+</table>
+<p>If several match: <b>any block wins outright → then redactions → log filters only record.</b></p>
+
+<h3>The clever part: keywords split across packets</h3>
+<p>TCP is a stream with no message boundaries. One <code>recv()</code> can return half a line. If you only scan each chunk, <code>"confi"</code> + <code>"dential"</code> slips through. <code>StreamInspector</code> buffers bytes into complete lines and holds back any tail that could be the start of a blocked word. A test (<code>test_every_segmentation_gives_same_result</code>) checks the verdict is identical however the data is chopped.</p>
+<div class="card noprint">
+ <b>Try it:</b> <input id="kw" value="this is confidential data" size="30"> split at char <input id="cut" type="number" value="13" min="1" max="30" style="width:60px">
+ <button onclick="splitDemo()">Show</button>
+ <pre id="sd" style="margin-top:10px"></pre>
+</div>
+<p><b>Why strip <code>Accept-Encoding</code>?</b> A gzip body can't be scanned, so the proxy asks the server for uncompressed responses.</p>
+</section>
+
+<section id="s7">
+<h2>7. Security design (good talking points)</h2>
+<table>
+<tr><th>Threat</th><th>Defence</th></tr>
+<tr><td>Rule bypass via odd URLs</td><td><code>normalize_path()</code>; forward the normalised path</td></tr>
+<tr><td>HTTP request smuggling</td><td><code>httpmsg</code> rejects Content-Length + Transfer-Encoding together, conflicting lengths, etc.</td></tr>
+<tr><td>Impersonating a user</td><td>Identity from the TLS client certificate, not a client-supplied header</td></tr>
+<tr><td>Keyword split across packets</td><td><code>StreamInspector</code> line re-assembly + hold-back</td></tr>
+<tr><td>Look-alike domain (<code>notyoutube.com</code>)</td><td>exact or <code>"." + domain</code> suffix match</td></tr>
+<tr><td>Requester approves own request</td><td>server-side <code>@role_required("admin")</code></td></tr>
+<tr><td>CSRF</td><td>per-session token on every POST, compared with <code>hmac.compare_digest</code></td></tr>
+<tr><td>Password theft from the data store</td><td>PBKDF2-SHA256 salted hashes (never plaintext)</td></tr>
+<tr><td>SSRF through the Browse page</td><td>http/https only; host must resolve to a <b>public</b> IP; every redirect re-checked; login required</td></tr>
+<tr><td>Scripts in a fetched preview</td><td>sandboxed iframe, no <code>allow-scripts</code>, no <code>allow-same-origin</code></td></tr>
+<tr><td>Rogue certificates from the block-page CA</td><td>dedicated CA, key <code>chmod 600</code> and git-ignored, 30-day leaf certs, strict host-name validation, only blocked hosts intercepted, trust removed after the demo</td></tr>
+<tr><td>Resource exhaustion</td><td>connection semaphore, per-user caps, sliding-window rate limit, size limits, timeouts</td></tr>
+<tr><td>Bad policy edit</td><td>validated; invalid → rejected, old version kept</td></tr>
+</table>
+
+<h3>Why a browser can't just show "blocked"</h3>
+<p>For HTTPS the browser sends <code>CONNECT</code> <i>before</i> TLS. If the proxy refuses, browsers throw away the refusal's body and show their own error. To show a real page, the proxy must answer <code>200</code> and do the TLS handshake itself with a certificate from its own CA, which the browser must trust once. This is called <b>TLS interception</b>; it's only done for <b>blocked</b> hosts. Allowed traffic stays end-to-end encrypted.</p>
+</section>
+
+<section id="s8">
+<h2>8. Honest limitations</h2>
+<p class="sub">Presenters who name their own limits sound credible. Say these before someone asks.</p>
+<ol>
+<li><b>Hostname-only for HTTPS.</b> It can block <code>youtube.com</code> but not one video on it.</li>
+<li><b>Bypassable.</b> Only traffic sent <i>to</i> the proxy is filtered. A VPN, DNS-over-HTTPS or switching the proxy off avoids it. Real enforcement needs a gateway or firewall.</li>
+<li><b>Demo-grade authentication.</b> Layer B uses Basic proxy auth (cleartext on the wire) with public demo passwords and a non-constant-time <code>==</code> compare. Fine on loopback only.</li>
+<li><b>JSON file as the database.</b> Writes are atomic but two admins editing at once could race.</li>
+<li><b>Layer B detects revocation by polling</b> every second; Layer A is pushed the change instantly.</li>
+<li><b>Flask development server</b>, not production.</li>
+<li><b>Layer A listens on 0.0.0.0</b> and ships with a default admin token and no mandatory client certificate. Tighten before any shared use.</li>
+</ol>
+<p><b>Next steps you could propose:</b> TLS interception with a managed CA (to see paths), a real database, hashed proxy credentials, push notifications, SSO, audit export.</p>
+<p><b>Test status:</b> 86 tests, 85 pass. The one failure (<code>test_tls_and_identity</code>) expects TLS 1.3 but this Mac's system Python negotiates TLS 1.2. It's an environment difference, not a logic bug. Run with <code>venv/bin/python -m unittest discover -s tests</code>.</p>
+</section>
+
+<section id="s9">
+<h2>9. Your presentation: a 10-minute plan</h2>
+<p class="sub">Eight slides. Timings add up to ~10 minutes with demo. "Say" lines are suggested wording; rephrase in your own voice.</p>
+
+<div class="slide"><b>Slide 1: Title and problem</b> <span class="time">(0:45)</span>
+<p class="say">"Schools and offices need to control which sites people can reach, but a hard block frustrates people with a genuine need. AccessWindow is a filtering proxy that blocks by default and lets users request <i>temporary</i> access that an admin approves and that expires on its own."</p></div>
+
+<div class="slide"><b>Slide 2: What is a proxy?</b> <span class="time">(1:00)</span>
+<p>Diagram: Browser → Proxy → Website. Mention forward vs reverse, <code>CONNECT</code> for HTTPS.</p>
+<p class="say">"The browser never talks to the website directly. The proxy decides first. For HTTPS it can only see the hostname, not the page."</p></div>
+
+<div class="slide"><b>Slide 3: Architecture</b> <span class="time">(1:15)</span>
+<p>Use the diagram from section 3. Three layers: two proxies and one dashboard.</p>
+<p class="say">"Layer A is the lab proxy with identity and content inspection. Layer B filters real websites by hostname. Layer C, the dashboard, is the control plane that edits the rules."</p></div>
+
+<div class="slide"><b>Slide 4: The rule engine</b> <span class="time">(1:30)</span>
+<p>Show the 8-line <code>match_rule</code>. Example list: allow bob→youtube (temporary), deny *→youtube, default allow.</p>
+<p class="say">"Rules are checked top to bottom and the first match wins. So a temporary allow goes on top and beats the deny below it. When it expires, the deny applies again."</p></div>
+
+<div class="slide"><b>Slide 5: The approval workflow</b> <span class="time">(1:00)</span>
+<p>Four-step strip: Blocked → Request → Approve → Expire.</p>
+<p class="say">"Expiry is checked by the proxy on every request, not by a cleanup job, so it still works if the dashboard crashes. Open tunnels are re-checked every second, so a revoke cuts a live video within about a second."</p></div>
+
+<div class="slide"><b>Slide 6: LIVE DEMO</b> <span class="time">(2:30)</span>
+<p>Follow section 11. <b>Have a backup:</b> screenshots or <code>packet_flow.html</code> in case the network or proxy fails.</p></div>
+
+<div class="slide"><b>Slide 7: Security and limitations</b> <span class="time">(1:15)</span>
+<p>Pick 3 defences (first-match path normalisation, CSRF + server-side roles, SSRF guard) and 2 limits (hostname-only HTTPS, bypassable).</p>
+<p class="say">"It's a demo-grade system and I know exactly where it stops: it can't see inside HTTPS, and anyone who turns the proxy off bypasses it."</p></div>
+
+<div class="slide"><b>Slide 8: Summary and questions</b> <span class="time">(0:45)</span>
+<p class="say">"Ordered rules, first match wins, temporary access is just a rule with an expiry, enforced in the data path. Happy to take questions."</p></div>
+
+<h3>Delivery tips</h3>
+<ul>
+<li>Memorise the <b>one-sentence summary</b> from section 1 and the <b>four-act story</b> from section 4. Everything else is detail you can look up.</li>
+<li>If you don't know an answer, say what the code <i>does</i> and where you'd look (<code>policy.py</code>, <code>forward_proxy.py</code>) instead of guessing.</li>
+<li>Rehearse the demo twice, including the failure case (what you do if the proxy won't start).</li>
+</ul>
+</section>
+
+<section id="s10">
+<h2>10. Likely questions and short answers</h2>
+<details><summary>What does your project do?</summary><p>It filters network access through a proxy using ordered rules. A dashboard lets an admin manage rules and approve requests for temporary access, which expires automatically.</p></details>
+<details><summary>Why use a proxy instead of filtering in the browser?</summary><p>It's central, outside the user's control, works for any app that honours the proxy, and gives one place to log and audit.</p></details>
+<details><summary>Can the proxy see which page I visit on an HTTPS site?</summary><p>No. Only the hostname from <code>CONNECT</code>. The path and content are inside TLS. Seeing them would need TLS interception.</p></details>
+<details><summary>What does "first match wins" mean and why does order matter?</summary><p>Rules are tested top to bottom and the first whose conditions all match decides. A temporary allow must sit above the deny to override it, so it's inserted at position 0.</p></details>
+<details><summary>How does a site re-block itself after the time is up?</summary><p><code>match_rule</code> skips rules where <code>rule_expired()</code> is true, so the older deny underneath matches again. It's enforced in the data path with no job required.</p></details>
+<details><summary>What about a tunnel already open when time runs out or access is revoked?</summary><p><code>tunnel()</code> wakes every second, stops at the grant's deadline, and re-runs <code>match_rule</code> for that host and user, so it closes within about a second.</p></details>
+<details><summary>How do you stop a user approving their own request?</summary><p>Approve, reject and revoke routes require the admin role, enforced server-side (403 otherwise). Hiding a button isn't security.</p></details>
+<details><summary>What is CSRF and how do you prevent it?</summary><p>A malicious site makes your logged-in browser submit a form to the dashboard. Each session has a random token every POST must include, checked with <code>hmac.compare_digest</code>.</p></details>
+<details><summary>How are passwords stored?</summary><p>Salted PBKDF2-SHA256 hashes via Werkzeug. (Scrypt, the default, isn't available in this Python build, so PBKDF2 is set explicitly.)</p></details>
+<details><summary>Why can't you scan each recv() chunk for keywords?</summary><p>TCP has no message boundaries, so a keyword can be split across chunks. <code>StreamInspector</code> buffers into lines and holds back any possible keyword prefix.</p></details>
+<details><summary>Block, redact and log: what's the difference?</summary><p>Block refuses or terminates, redact replaces the text and continues, log only records. A block wins over everything.</p></details>
+<details><summary>What is mutual TLS and why use it?</summary><p>Both sides present certificates. The client certificate's Common Name becomes the identity, which can't be faked by editing a header. No certificate means <code>anonymous</code>.</p></details>
+<details><summary>How do rule changes apply without restarting?</summary><p>Policy objects are immutable; changes build a new version and swap it atomically under a lock. A watcher polls the file mtime. After each swap, <code>revalidate()</code> kills open connections that are now denied.</p></details>
+<details><summary>Why does a blocked HTTPS site show "can't be reached" instead of a message?</summary><p>The browser asks for a tunnel before TLS; when refused it discards the body. The block page works by answering 200 and doing TLS with a certificate from a locally trusted CA, only for blocked hosts.</p></details>
+<details><summary>Isn't trusting your own CA dangerous?</summary><p>Yes, while trusted, whoever has <code>ca.key</code> can mint certificates for any site on that machine. Mitigations: dedicated CA, key locked down and git-ignored, 30-day certificates, strict host validation, only blocked hosts intercepted, trust removed afterwards.</p></details>
+<details><summary>How does the Browse page avoid SSRF?</summary><p>Only http/https, the host must resolve to a public IP (so localhost and the LAN are refused), redirects are followed manually and re-checked at each hop, the preview is sandboxed with scripts off, and login is required.</p></details>
+<details><summary>What if the user turns off the proxy setting?</summary><p>Filtering is bypassed. A proxy only filters traffic sent to it. Real enforcement needs network-level controls.</p></details>
+<details><summary>How would you scale it?</summary><p>Replace JSON with a database or cache, use async I/O or a process pool, central logging, hashed credentials or SSO.</p></details>
+<details><summary>Why simulated services?</summary><p>A safe, self-contained lab: reproducible demos and tests without touching real sites.</p></details>
+<p class="sub">The full bank of 54 questions is in <b>STUDY_GUIDE</b> (md/pdf).</p>
+</section>
+
+<section id="s11">
+<h2>11. Live demo script (3 minutes)</h2>
+<div class="card">
+<p><b>Before you go on stage:</b> open four terminals in the project folder with the virtual environment active (<code>source venv/bin/activate</code>). Check the demo works once, end to end.</p>
+<pre>python3 services.py
+python3 proxy.py
+python3 forward_proxy.py --block-page
+python3 app.py</pre>
+<p>Trust the block-page CA once (the command is printed on first start) and set the macOS web proxies to <code>127.0.0.1:8080</code>. See <code>README_ACCESSWINDOW.md</code>. Accounts: <code>admin/admin-demo</code>, <code>bob/bob-demo</code>, <code>carol/carol-demo</code>.</p>
+</div>
+<ol class="steps">
+<li>Admin → <b>Website access</b> → add <code>youtube.com</code>, <b>Block</b>, all users.</li>
+<li>Browser → youtube.com as bob → the <b>block page</b> (why, who, request button).<br><span class="sub">Terminal fallback: <code>curl -x http://127.0.0.1:8080 --proxy-user bob:bob-demo https://youtube.com/ -I</code> → <code>403</code>.</span></li>
+<li>Click <b>Request temporary access</b> → sign in as bob → 5 minutes + reason.</li>
+<li>Admin → <b>Access requests → Approve</b>. Reload YouTube → it opens. Show <b>Temporary grants</b> counting down.</li>
+<li><b>Revoke</b> (or wait) → the open connection is cut within a second and the block page returns. Show the <b>Activity log</b>.</li>
+<li>Close with <code>packet_flow.html</code>: packet → auth → target → first-match rule → verdict → tunnel or 403.</li>
+</ol>
+<div class="card"><span class="tag t-warn">After the demo</span> Remove the CA trust:<br><code>security delete-certificate -c "AccessWindow Block Page CA" ~/Library/Keychains/login.keychain-db</code><br>and turn the macOS web proxies off, or your Mac keeps routing through a proxy that is no longer running.</div>
+
+<h3>Cheat sheet: numbers and names</h3>
+<table>
+<tr><td>Dashboard</td><td><code>127.0.0.1:5000</code></td><td>Forward proxy</td><td><code>127.0.0.1:8080</code></td></tr>
+<tr><td>TLS proxy / admin console</td><td><code>:8443</code> / <code>127.0.0.1:9443</code></td><td>Services</td><td>web 9001 · chat 9002 · echo 9003 · files 9004 · bulk 9005</td></tr>
+<tr><td>Policy files</td><td><code>config/policy.json</code> (A), <code>config/real_website_policy.json</code> (B)</td><td>Logs</td><td><code>logs/access.log</code> (A), <code>logs/real_proxy_access.jsonl</code> (B)</td></tr>
+<tr><td>Durations</td><td>5 / 15 / 30 / 60 minutes</td><td>Tunnel re-check</td><td>every 1 s</td></tr>
+<tr><td>Related domains</td><td colspan="3"><code>youtube.com</code> ⇒ <code>googlevideo.com</code>, <code>ytimg.com</code>, <code>youtu.be</code>, <code>youtube-nocookie.com</code></td></tr>
+</table>
+</section>
+
+<section id="s12">
+<h2>12. Flashcards: test yourself</h2>
+<p class="noprint">Click a card to reveal the answer. (In the PDF the answers are printed.)</p>
+<div id="cards"></div>
+</section>
+
+</div>
+
+<script>
+// ---- rule simulator (mirrors forward_proxy.match_rule) ----
+const FAM={"youtube.com":["googlevideo.com","ytimg.com","youtu.be","youtube-nocookie.com"]};
+function hit(host,dom){for(const d of [dom,...(FAM[dom]||[])]) if(host===d||host.endsWith("."+d)) return true;return false}
+function run(){
+  const user=u.value,host=h.value,g=document.getElementById("g").value;
+  const rules=[];
+  if(g!=="none") rules.push({id:"REAL-GRANT",action:"allow",users:["bob"],dom:"youtube.com",note:"temporary, 5 min",expired:g==="expired"});
+  rules.push({id:"REAL-DENY",action:"deny",users:["*"],dom:"youtube.com",note:"admin block",expired:false});
+  let win=null,html="<tr><th>#</th><th>Rule</th><th>Action</th><th>Users</th><th>Domain</th><th>Result</th></tr>";
+  rules.forEach((r,i)=>{
+    let res,cls="";
+    if(win){res="not reached";cls="skip"}
+    else if(r.expired){res="skipped: expired";cls="skip"}
+    else if(!r.users.includes("*")&&!r.users.includes(user)){res="skipped: other user"}
+    else if(!hit(host,r.dom)){res="no domain match"}
+    else{res="MATCH, first match wins";win=r}
+    html+=`<tr class="${cls}"><td>${i+1}</td><td>${r.id}<br><small>${r.note}</small></td><td>${r.action}</td><td>${r.users.join(",")}</td><td>${r.dom}</td><td class="${win===r?'hit':''}">${res}</td></tr>`;
+  });
+  html+=`<tr class="${win?'skip':''}"><td>–</td><td>default</td><td>allow</td><td>*</td><td>*</td><td class="${win?'':'hit'}">${win?'not reached':'used: nothing matched'}</td></tr>`;
+  rt.innerHTML=html;
+  const act=win?win.action:"allow";
+  vd.className="verdict "+act;
+  vd.textContent=act==="allow"?"ALLOW: proxy opens a tunnel":"DENY: 403 / block page";
+  why.textContent=win?`Decided by ${win.id}.`:"No rule applied, so the default action (allow) is used.";
+}
+const u=document.getElementById("u"),h=document.getElementById("h"),rt=document.getElementById("rt"),vd=document.getElementById("vd"),why=document.getElementById("why");
+["u","h","g"].forEach(i=>document.getElementById(i).addEventListener("change",run));run();
+
+// ---- stream split demo ----
+function splitDemo(){
+  const t=document.getElementById("kw").value, c=Math.min(+document.getElementById("cut").value,t.length-1), w="confidential";
+  const a=t.slice(0,c), b=t.slice(c);
+  const naive=a.includes(w)||b.includes(w);
+  const smart=t.includes(w);
+  document.getElementById("sd").textContent=
+`chunk 1: "${a}"\nchunk 2: "${b}"\n\nNaive scan of each chunk:      ${naive?"BLOCKED":"missed! slipped through"}\nStreamInspector (line buffer): ${smart?"BLOCKED":"clean"}`;
+}
+splitDemo();
+
+// ---- flashcards ----
+const Q=[
+["One-sentence summary?","An ordered, first-match-wins rule list is evaluated for every connection; the dashboard edits that list; temporary access is just a rule with an expiry time."],
+["Why is a temporary allow inserted at index 0?","First match wins. If appended, the older deny would match first and the grant would never apply."],
+["Where is expiry enforced?","In the proxy's data path: rule_expired() compares expires_at with the clock on every request. No background job is needed for correctness."],
+["What does the proxy see for an HTTPS site?","Only the hostname from CONNECT host:443. The path and content are encrypted."],
+["Default action in Layer A vs Layer B?","A: deny (whitelist). B: allow (blacklist)."],
+["Two proxies: what's the difference?","A (netproxy): TLS proxy for simulated services with identity, rules and content filters. B (forward_proxy.py): real domains, hostname only."],
+["How is user identity established in Layer A / B / dashboard?","A: client certificate Common Name (mTLS). B: Basic proxy auth (407 if wrong). Dashboard: login form + server-side session."],
+["What stops 'notyoutube.com' matching 'youtube.com'?","host == domain or host.endswith('.' + domain)."],
+["Why DOMAIN_FAMILIES?","YouTube video comes from googlevideo.com, thumbnails from ytimg.com. Blocking only youtube.com would let a playing video continue."],
+["What does revalidate() do?","After a policy swap it re-evaluates all open connections and kills the ones now denied. That makes filtering dynamic."],
+["Why is Policy immutable?","So a thread can never see a half-applied rule list. Changes build a new version and swap atomically under a lock."],
+["Why StreamInspector?","TCP has no message boundaries. A keyword can be split across packets, so it buffers into lines and holds back possible keyword prefixes."],
+["Block vs redact vs log?","Block refuses or terminates; redact replaces text and continues; log only records. Block wins outright."],
+["Why can't a browser show a proxy's block message for HTTPS?","It sends CONNECT before TLS and ignores the body of a refusal. Showing a page needs TLS interception with a trusted CA."],
+["Biggest risk of the block page, and mitigation?","A trusted CA key could mint certs for any site. Dedicated CA, key chmod 600 + git-ignored, 30-day certs, strict host names, only blocked hosts, remove trust after the demo."],
+["How is CSRF prevented?","Per-session random token required on every POST, compared with hmac.compare_digest."],
+["How is SSRF prevented on Browse?","http/https only, host must resolve to a public IP, redirects re-checked each hop, sandboxed preview, login required."],
+["Top 3 limitations?","Hostname-only for HTTPS; bypassable by turning the proxy off / VPN; demo-grade auth and JSON file storage."],
+["Test status?","86 tests, 85 pass. test_tls_and_identity expects TLS 1.3 but system Python negotiates 1.2: an environment difference."]
+];
+const cards=document.getElementById("cards");
+Q.forEach(([q,a],i)=>{const d=document.createElement("details");d.innerHTML=`<summary>${i+1}. ${q}</summary><p>${a}</p>`;cards.appendChild(d)});
+window.addEventListener("beforeprint",()=>document.querySelectorAll("details").forEach(d=>d.open=true));
+</script>
+</body>
+</html>

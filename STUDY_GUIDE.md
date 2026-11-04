@@ -84,7 +84,9 @@ Why two proxies? Layer A is a full TLS proxy for a closed lab (only the services
 | `static/style.css`, `theme.css`, `app.js` | Original styles; the new palette/typography layer; countdown timers + account-menu behaviour. |
 
 ### Tests (`tests/`)
-`test_policy.py` (rule engine), `test_filters.py` (content filtering), `test_integration.py` (whole stack over real sockets), `test_forward_proxy_policy.py` (real-domain matching), `test_accesswindow_roles.py` (role separation), `test_site_temp_access.py` (temporary unblock), `test_browse.py` (Browse page and its safeguards), `test_blockpage.py` (block page over real TLS), `test_block_link.py` (request link and login redirect).
+`test_policy.py` (rule engine), `test_filters.py` (content filtering), `test_integration.py` (whole stack over real sockets), `test_forward_proxy_policy.py` (real-domain matching), `test_accesswindow_roles.py` (role separation), `test_browse.py` (Browse page and its safeguards), `test_blockpage.py` (block page over real TLS), `test_block_link.py` (request link and login redirect).
+
+Run them with the project's virtual environment (system Python has no Flask): `venv/bin/python -m unittest discover -s tests` → **86 tests, 85 pass, 1 known environment failure** (see Q42). The temporary-unblock feature is exercised through `test_accesswindow_roles.py`, `test_block_link.py` and `test_browse.py`.
 
 ---
 
@@ -264,7 +266,7 @@ time passes → rule_expired() returns True → rule skipped → deny rule match
 | Requester approving own request | `@role_required("admin")` on approve/reject/revoke |
 | Cross-site request forgery | per-session CSRF token on every POST |
 | The Browse page used to reach internal addresses (SSRF) | only `http`/`https`; the host must resolve to a **public** IP (`is_global`) so localhost, the admin console and the LAN are refused; every redirect hop is re-checked against the policy and the IP rule; login required |
-| Scripts from a fetched page attacking the dashboard | the preview is a `sandbox` iframe with no `allow-scripts` and no `allow-same-origin`, so it has a throw-away origin |
+| Scripts from a fetched page attacking the dashboard | the preview is a `sandbox` iframe with no `allow-scripts` and no `allow-same-origin`, so it has a throw-away origin (the only permission granted is `allow-top-navigation-by-user-activation`, i.e. a link the user clicks may navigate the page) |
 | A forged certificate for the wrong site | the block page only issues certificates for valid host names (strict pattern, never a bare IP) and the CA is dedicated, locked down and removable |
 | Resource exhaustion | `max_connections` semaphore, per-user caps, rate limit, header/body size limits, idle timeouts |
 | Admin console abuse | listens on `127.0.0.1` only, token authentication, TLS |
@@ -280,7 +282,7 @@ time passes → rule_expired() returns True → rule skipped → deny rule match
 4. **File-based policy for Layer B** is re-read on every request: simple and live, but not scalable, and read-modify-write from multiple processes isn't locked (writes are atomic, but two simultaneous admin edits could race).
 5. **Layer B revalidates open tunnels by polling** (once a second), whereas Layer A is pushed the change the moment a policy swaps. Fine for a demo, but a push model would scale better.
 6. **Flask development server** — fine for a demo, not production.
-7. `config/proxy.json` has `listen_host: 0.0.0.0` — Layer A is reachable from the LAN by default; restrict it for any shared setting.
+7. `config/proxy.json` has `listen_host: 0.0.0.0` — Layer A is reachable from the LAN by default; restrict it for any shared setting. It also ships `require_client_cert: false` (clients without a certificate become `anonymous`) and a default admin token (`cn-proxy-admin`) — change both for shared use.
 
 **Possible improvements:** TLS interception with a managed CA (to see paths), a database instead of JSON, hashed proxy credentials, push notifications for requests, SSO, per-request audit export.
 
@@ -396,9 +398,9 @@ A `mime` filter (F04) checks the response `Content-Type`; staff are exempt via `
 **Q40. Does approval affect other users?** No — the rule's `users` is `["bob"]`; Carol is still blocked (tested).
 
 ### H. Testing
-**Q41. How did you test it?** Unit tests for the rule engine, filters, and domain matching; integration tests that start the whole stack over real sockets (TLS identity, denials, path rules, hot reload, admin kill, rate limits); role tests; and tests for temporary unblock (request→approve→expire, revoke, self-approval refused).
+**Q41. How did you test it?** Unit tests for the rule engine, filters, and domain matching; integration tests that start the whole stack over real sockets (TLS identity, denials, path rules, hot reload, admin kill, rate limits); role tests; and tests for roles (self-approval refused), the block-page request link, and the Browse page's SSRF guards. In total 86 tests; run with `venv/bin/python -m unittest discover -s tests`.
 
-**Q42. One known failing test?** `test_tls_and_identity` expects TLS 1.3; on this Mac the system Python negotiates TLS 1.2. It's an environment difference, not a logic bug.
+**Q42. One known failing test?** `test_tls_and_identity` expects TLS 1.3; on this Mac the system Python negotiates TLS 1.2. It's an environment difference, not a logic bug. It is the only failure in the suite (85 of 86 pass).
 
 ### I. "What if…" / critical thinking
 **Q43. What if the user turns off the proxy setting?** Filtering is bypassed — a proxy only filters traffic sent to it. Real enforcement needs network-level controls.
